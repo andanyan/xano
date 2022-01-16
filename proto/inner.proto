@@ -1,8 +1,0 @@
-syntax = "proto3";
-package proto;
-
-option go_package = ".";
-
-// double float int32 int64 uint32 uint64 sint32 sint64 
-// fixed32 fixed64 sfixed64 sfixed32 sfixed64 bool string bytes
-// repeated optional required
