@@ -40,7 +40,7 @@ func (s *BaseSession) Rpc(route string, input, output interface{}) error {
 	defer cli.Close()
 
 	// 封装成packet
-	inputPacket, err := s.EncodePacket(route, cli.TcpHandle.GetMid(), input)
+	inputPacket, err := s.EncodePacket(route, cli.TcpHandle.GetMid(), common.TcpDealProtobuf, input)
 	if err != nil {
 		return err
 	}
@@ -55,13 +55,15 @@ func (s *BaseSession) Rpc(route string, input, output interface{}) error {
 	c := make(chan struct{})
 	// 设置收包
 	cli.TcpHandle.SetHandle(func(h *core.TcpHandle, p *common.TcpPacket) {
+		// 只要第一个包
+		cli.TcpHandle.SetHandle(nil)
+
 		err := s.DecodePacket(p, output)
 		if err != nil {
 			log.Panicln(err.Error())
 		}
 		c <- struct{}{}
 	})
-	defer cli.TcpHandle.SetHandle(nil)
 
 	// 读取一个包
 	t := time.NewTimer(common.TcpDeadDuration * time.Second)
@@ -78,16 +80,19 @@ func (s *BaseSession) Rpc(route string, input, output interface{}) error {
 }
 
 // msg请求包生成
-func (s *BaseSession) EncodePacket(route string, mid uint64, input interface{}) (*common.TcpPacket, error) {
+func (s *BaseSession) EncodePacket(route string, mid uint64, doneDeal uint8, input interface{}) (*common.TcpPacket, error) {
 	inputBys, err := common.TcpMsgMarsh(input)
 	if err != nil {
 		return nil, err
 	}
+
 	msg := &deal.Msg{
 		Route: route,
 		Mid:   mid,
+		Deal:  uint32(doneDeal),
 		Data:  inputBys,
 	}
+
 	msgBys, err := common.TcpMsgMarsh(msg)
 	if err != nil {
 		return nil, err
@@ -107,7 +112,7 @@ func (s *BaseSession) DecodePacket(packet *common.TcpPacket, output interface{})
 	if err != nil {
 		return err
 	}
-	err = common.TcpMsgUnMarsh(msg.Data, output)
+	err = common.MsgUnMarsh(uint8(msg.Deal), msg.Data, output)
 	if err != nil {
 		return err
 	}

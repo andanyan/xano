@@ -12,10 +12,6 @@ const (
 const (
 	TcpPacketHeadLength int = 2
 	TcpReadBufLen       int = 2048
-
-	HeartPacketLength   uint16 = 4
-	HeartPacketRequest  string = "Ping"
-	HeartPacketResponse string = "Pong"
 )
 
 // tcp请求信息
@@ -28,14 +24,18 @@ const (
 type GateConfig struct {
 	// 本地网关启动地址
 	TcpAddr string
-	// 使用的协议类型
+	// 使用的协议类型 1-protobuf 2-json
 	TcpDeal uint8
+
+	// http服务地址
+	HttpAddr string
+	// http协议
+	HttpDeal uint8
 }
 
 // tcp服务层配置
 type TcpServiceConfig struct {
-	LocalAddr string
-	TcpAddr   string
+	Addr string
 }
 
 // tcp数据包结构

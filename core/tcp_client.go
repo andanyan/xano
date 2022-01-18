@@ -16,7 +16,7 @@ func NewTcpClient(addr string) (*TcpClient, error) {
 	if err != nil {
 		return nil, err
 	}
-	h := NewTcpHandle(conn, true)
+	h := NewTcpHandle(conn)
 	h.handle()
 
 	return &TcpClient{

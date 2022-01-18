@@ -17,7 +17,10 @@ message Msg {
     // 消息id
     // @inject_tag: json:"mid"
     uint64 mid = 2;
+    // data数据协议
+    // @inject_tag: json:"deal"
+    uint32 deal = 3;
     // 数据
     // @inject_tag: json:"data"
-    bytes data = 3;
+    bytes data = 4;
 }

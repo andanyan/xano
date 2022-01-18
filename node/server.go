@@ -14,9 +14,10 @@ func NewServer() *Server {
 }
 
 func (s *Server) Run() {
-	if common.GetServiceConfig().LocalAddr == "" {
+	if common.GetServiceConfig().Addr == "" {
 		return
 	}
+	log.Printf("Gate Service Address: %s \n", common.GetGateConfig().HttpAddr)
 	core.NewTcpServer(common.GetGateConfig().TcpAddr, s.Handle)
 }
 

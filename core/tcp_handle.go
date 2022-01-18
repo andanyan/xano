@@ -5,7 +5,6 @@ import (
 	"log"
 	"net"
 	"sync"
-	"time"
 	"xlq-server/common"
 )
 
@@ -22,19 +21,15 @@ type TcpHandle struct {
 	readChan   chan *common.TcpPacket
 	handleFunc TcpHandleFunc
 	mid        uint64
-	// 连接类型
-	isClient bool
 }
 
-func NewTcpHandle(conn net.Conn, isClient bool) *TcpHandle {
+func NewTcpHandle(conn net.Conn) *TcpHandle {
 	return &TcpHandle{
 		Value:    make(map[string]interface{}),
 		status:   true,
 		conn:     conn,
 		sendChan: make(chan *common.TcpPacket),
 		readChan: make(chan *common.TcpPacket),
-		// handleFunc: handleFunc,
-		isClient: isClient,
 	}
 }
 
@@ -86,41 +81,14 @@ func (h *TcpHandle) GetMid() uint64 {
 func (h *TcpHandle) handle() {
 	go h.runSend()
 	go h.runRead()
-	if h.isClient {
-		go h.runHeart()
-	}
 	h.handleRead()
-}
-
-// 心跳处理
-func (h *TcpHandle) runHeart() {
-	heartPacket := &common.TcpPacket{
-		Length: common.HeartPacketLength,
-		Data:   []byte(common.HeartPacketRequest),
-	}
-	for {
-		if !h.status {
-			break
-		}
-		time.Sleep(10 * time.Second)
-		h.Send(heartPacket)
-	}
 }
 
 // 包处理
 func (h *TcpHandle) runRead() {
-	heartPacket := &common.TcpPacket{
-		Length: common.HeartPacketLength,
-		Data:   []byte(common.HeartPacketResponse),
-	}
 	for p := range h.readChan {
 		if !h.status {
 			break
-		}
-		// 心跳包辨别
-		if p.Length == common.HeartPacketLength && string(p.Data) == common.HeartPacketRequest {
-			h.Send(heartPacket)
-			return
 		}
 		if h.handleFunc != nil {
 			h.handleFunc(h, p)

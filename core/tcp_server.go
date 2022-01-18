@@ -18,7 +18,7 @@ func NewTcpServer(addr string, handleFunc TcpHandleFunc) {
 			log.Println(err.Error())
 			continue
 		}
-		h := NewTcpHandle(conn, false)
+		h := NewTcpHandle(conn)
 		h.SetHandle(handleFunc)
 		go h.handle()
 	}

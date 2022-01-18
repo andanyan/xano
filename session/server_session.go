@@ -33,8 +33,16 @@ func (s *ServerSession) Handle(packet *common.TcpPacket) error {
 		return fmt.Errorf("not found service: " + msg.Route)
 	}
 
+	// 指定协议
+	deal := common.TcpDealProtobuf
+	switch uint8(msg.Deal) {
+	case common.TcpDealJson:
+		deal = common.TcpDealJson
+	}
+
+	// 解析输入函数
 	input := reflect.New(componet.Input)
-	err = common.TcpMsgUnMarsh(msg.Data, input.Interface())
+	err = common.MsgUnMarsh(deal, msg.Data, input.Interface())
 	if err != nil {
 		return err
 	}
@@ -58,7 +66,7 @@ func (s *ServerSession) Handle(packet *common.TcpPacket) error {
 	}
 
 	// 生成回包
-	outputPacket, err := s.EncodePacket(msg.Route, msg.Mid, results[0].Interface())
+	outputPacket, err := s.EncodePacket(msg.Route, msg.Mid, uint8(msg.Deal), results[0].Interface())
 	if err != nil {
 		return err
 	}
