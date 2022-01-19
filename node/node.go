@@ -32,6 +32,8 @@ func (n *Node) Run() {
 	// 服务启动
 	server := NewServer()
 	go server.Run()
+	// 加入到gate中
+	go server.AddGate()
 
 	// 监听信号
 	sg := make(chan os.Signal, 1)

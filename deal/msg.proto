@@ -10,6 +10,7 @@ option go_package = "../deal";
 // protoc --proto_path=. --go_out=. *.proto
 // protoc-go-inject-tag --input=*.pb.go 
 
+// 包消息
 message Msg {
     // 路由 模块_方法
     // @inject_tag: json:"route"
@@ -23,4 +24,22 @@ message Msg {
     // 数据
     // @inject_tag: json:"data"
     bytes data = 4;
+}
+
+// 路由注册
+message GateRouteRequest {
+    // 端口
+    string port = 1;
+    // 路由列表
+    repeated string routes = 2;
+}
+
+// 路由注册回包
+message GateRouteItem {
+    string addr = 1;
+    repeated string routes = 2;
+}
+message GateRouteResponse {
+    // 路由列表
+    repeated GateRouteItem routes = 1;
 }

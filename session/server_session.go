@@ -48,7 +48,7 @@ func (s *ServerSession) Handle(packet *common.TcpPacket) error {
 	}
 
 	args := []reflect.Value{reflect.ValueOf(s), input}
-	results := componet.Method.Func.Call(args)
+	results := componet.Func.Call(args)
 	resLen := len(results)
 	if resLen != 2 {
 		return fmt.Errorf("error output param nums")

@@ -57,10 +57,26 @@ func (g *Gate) RunHttp() {
 // http逻辑处理
 func (g *Gate) HttpHandle(w http.ResponseWriter, r *http.Request) {
 	// 路由解析
-	route, _ := url.QueryUnescape(r.URL.Path)
-	route = strings.Trim(strings.ReplaceAll(route, "/", "_"), "_")
-	if route == "" {
-		route = "base"
+	route, err := url.QueryUnescape(r.URL.Path)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		log.Panicln(err.Error())
+		return
+	}
+
+	// 路由转化
+	routeArr := strings.Split(route, "/")
+	routeLen := len(routeArr)
+	if routeLen < 3 {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	newRoute := ""
+	for i := 1; i < routeLen; i++ {
+		newRoute += strings.Title(routeArr[i])
+		if i == 1 {
+			newRoute += "_"
+		}
 	}
 
 	// 读取内容
@@ -73,7 +89,7 @@ func (g *Gate) HttpHandle(w http.ResponseWriter, r *http.Request) {
 	}
 
 	s := session.NewGateSession(nil)
-	res, err := s.HandleHttp(route, body)
+	res, err := s.HandleHttp(newRoute, body)
 	if err != nil {
 		log.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)

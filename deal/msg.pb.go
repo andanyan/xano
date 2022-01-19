@@ -20,6 +20,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// 包消息
 type Msg struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -99,6 +100,168 @@ func (x *Msg) GetData() []byte {
 	return nil
 }
 
+// 路由注册
+type GateRouteRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// 端口
+	Port string `protobuf:"bytes,1,opt,name=port,proto3" json:"port,omitempty"`
+	// 路由列表
+	Routes []string `protobuf:"bytes,2,rep,name=routes,proto3" json:"routes,omitempty"`
+}
+
+func (x *GateRouteRequest) Reset() {
+	*x = GateRouteRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_msg_proto_msgTypes[1]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *GateRouteRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GateRouteRequest) ProtoMessage() {}
+
+func (x *GateRouteRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_msg_proto_msgTypes[1]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GateRouteRequest.ProtoReflect.Descriptor instead.
+func (*GateRouteRequest) Descriptor() ([]byte, []int) {
+	return file_msg_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *GateRouteRequest) GetPort() string {
+	if x != nil {
+		return x.Port
+	}
+	return ""
+}
+
+func (x *GateRouteRequest) GetRoutes() []string {
+	if x != nil {
+		return x.Routes
+	}
+	return nil
+}
+
+// 路由注册回包
+type GateRouteItem struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Addr   string   `protobuf:"bytes,1,opt,name=addr,proto3" json:"addr,omitempty"`
+	Routes []string `protobuf:"bytes,2,rep,name=routes,proto3" json:"routes,omitempty"`
+}
+
+func (x *GateRouteItem) Reset() {
+	*x = GateRouteItem{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_msg_proto_msgTypes[2]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *GateRouteItem) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GateRouteItem) ProtoMessage() {}
+
+func (x *GateRouteItem) ProtoReflect() protoreflect.Message {
+	mi := &file_msg_proto_msgTypes[2]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GateRouteItem.ProtoReflect.Descriptor instead.
+func (*GateRouteItem) Descriptor() ([]byte, []int) {
+	return file_msg_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *GateRouteItem) GetAddr() string {
+	if x != nil {
+		return x.Addr
+	}
+	return ""
+}
+
+func (x *GateRouteItem) GetRoutes() []string {
+	if x != nil {
+		return x.Routes
+	}
+	return nil
+}
+
+type GateRouteResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// 路由列表
+	Routes []*GateRouteItem `protobuf:"bytes,1,rep,name=routes,proto3" json:"routes,omitempty"`
+}
+
+func (x *GateRouteResponse) Reset() {
+	*x = GateRouteResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_msg_proto_msgTypes[3]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *GateRouteResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GateRouteResponse) ProtoMessage() {}
+
+func (x *GateRouteResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_msg_proto_msgTypes[3]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GateRouteResponse.ProtoReflect.Descriptor instead.
+func (*GateRouteResponse) Descriptor() ([]byte, []int) {
+	return file_msg_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *GateRouteResponse) GetRoutes() []*GateRouteItem {
+	if x != nil {
+		return x.Routes
+	}
+	return nil
+}
+
 var File_msg_proto protoreflect.FileDescriptor
 
 var file_msg_proto_rawDesc = []byte{
@@ -108,8 +271,20 @@ var file_msg_proto_rawDesc = []byte{
 	0x0a, 0x03, 0x6d, 0x69, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x04, 0x52, 0x03, 0x6d, 0x69, 0x64,
 	0x12, 0x12, 0x0a, 0x04, 0x64, 0x65, 0x61, 0x6c, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x04,
 	0x64, 0x65, 0x61, 0x6c, 0x12, 0x12, 0x0a, 0x04, 0x64, 0x61, 0x74, 0x61, 0x18, 0x04, 0x20, 0x01,
-	0x28, 0x0c, 0x52, 0x04, 0x64, 0x61, 0x74, 0x61, 0x42, 0x09, 0x5a, 0x07, 0x2e, 0x2e, 0x2f, 0x64,
-	0x65, 0x61, 0x6c, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x28, 0x0c, 0x52, 0x04, 0x64, 0x61, 0x74, 0x61, 0x22, 0x3e, 0x0a, 0x10, 0x47, 0x61, 0x74, 0x65,
+	0x52, 0x6f, 0x75, 0x74, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x12, 0x0a, 0x04,
+	0x70, 0x6f, 0x72, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x70, 0x6f, 0x72, 0x74,
+	0x12, 0x16, 0x0a, 0x06, 0x72, 0x6f, 0x75, 0x74, 0x65, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28, 0x09,
+	0x52, 0x06, 0x72, 0x6f, 0x75, 0x74, 0x65, 0x73, 0x22, 0x3b, 0x0a, 0x0d, 0x47, 0x61, 0x74, 0x65,
+	0x52, 0x6f, 0x75, 0x74, 0x65, 0x49, 0x74, 0x65, 0x6d, 0x12, 0x12, 0x0a, 0x04, 0x61, 0x64, 0x64,
+	0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x61, 0x64, 0x64, 0x72, 0x12, 0x16, 0x0a,
+	0x06, 0x72, 0x6f, 0x75, 0x74, 0x65, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28, 0x09, 0x52, 0x06, 0x72,
+	0x6f, 0x75, 0x74, 0x65, 0x73, 0x22, 0x40, 0x0a, 0x11, 0x47, 0x61, 0x74, 0x65, 0x52, 0x6f, 0x75,
+	0x74, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x2b, 0x0a, 0x06, 0x72, 0x6f,
+	0x75, 0x74, 0x65, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x13, 0x2e, 0x64, 0x65, 0x61,
+	0x6c, 0x2e, 0x47, 0x61, 0x74, 0x65, 0x52, 0x6f, 0x75, 0x74, 0x65, 0x49, 0x74, 0x65, 0x6d, 0x52,
+	0x06, 0x72, 0x6f, 0x75, 0x74, 0x65, 0x73, 0x42, 0x09, 0x5a, 0x07, 0x2e, 0x2e, 0x2f, 0x64, 0x65,
+	0x61, 0x6c, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -124,16 +299,20 @@ func file_msg_proto_rawDescGZIP() []byte {
 	return file_msg_proto_rawDescData
 }
 
-var file_msg_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
+var file_msg_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_msg_proto_goTypes = []interface{}{
-	(*Msg)(nil), // 0: deal.Msg
+	(*Msg)(nil),               // 0: deal.Msg
+	(*GateRouteRequest)(nil),  // 1: deal.GateRouteRequest
+	(*GateRouteItem)(nil),     // 2: deal.GateRouteItem
+	(*GateRouteResponse)(nil), // 3: deal.GateRouteResponse
 }
 var file_msg_proto_depIdxs = []int32{
-	0, // [0:0] is the sub-list for method output_type
-	0, // [0:0] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	2, // 0: deal.GateRouteResponse.routes:type_name -> deal.GateRouteItem
+	1, // [1:1] is the sub-list for method output_type
+	1, // [1:1] is the sub-list for method input_type
+	1, // [1:1] is the sub-list for extension type_name
+	1, // [1:1] is the sub-list for extension extendee
+	0, // [0:1] is the sub-list for field type_name
 }
 
 func init() { file_msg_proto_init() }
@@ -154,6 +333,42 @@ func file_msg_proto_init() {
 				return nil
 			}
 		}
+		file_msg_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*GateRouteRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_msg_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*GateRouteItem); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_msg_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*GateRouteResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -161,7 +376,7 @@ func file_msg_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_msg_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   1,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
