@@ -8,28 +8,27 @@ import (
 	"xlq-server/common"
 )
 
-type TcpHandleFunc func(h *TcpHandle, p *common.TcpPacket)
+type TcpHandleFunc func(h *TcpHandle, p *common.Packet)
 
 type TcpHandle struct {
-	Value map[string]interface{}
+	value map[string]interface{}
 
 	// tcp状态
 	sync.RWMutex
 	status     bool
 	conn       net.Conn
-	sendChan   chan *common.TcpPacket
-	readChan   chan *common.TcpPacket
+	sendChan   chan *common.Packet
+	readChan   chan *common.Packet
 	handleFunc TcpHandleFunc
-	mid        uint64
 }
 
 func NewTcpHandle(conn net.Conn) *TcpHandle {
 	return &TcpHandle{
-		Value:    make(map[string]interface{}),
+		value:    make(map[string]interface{}),
 		status:   true,
 		conn:     conn,
-		sendChan: make(chan *common.TcpPacket),
-		readChan: make(chan *common.TcpPacket),
+		sendChan: make(chan *common.Packet),
+		readChan: make(chan *common.Packet),
 	}
 }
 
@@ -47,7 +46,7 @@ func (h *TcpHandle) Close() {
 }
 
 // 包入列
-func (h *TcpHandle) Send(p *common.TcpPacket) {
+func (h *TcpHandle) Send(p *common.Packet) {
 	if !h.status {
 		return
 	}
@@ -58,23 +57,14 @@ func (h *TcpHandle) Send(p *common.TcpPacket) {
 func (h *TcpHandle) Set(k string, v interface{}) {
 	h.Lock()
 	defer h.Unlock()
-	h.Value[k] = v
+	h.value[k] = v
 }
 
 // 获取值
 func (h *TcpHandle) Get(k string) interface{} {
 	h.RLock()
 	defer h.RUnlock()
-	return h.Value[k]
-}
-
-// 获取新的消息id
-func (h *TcpHandle) GetMid() uint64 {
-	h.Lock()
-	defer h.Unlock()
-	mid := h.mid
-	h.mid++
-	return mid
+	return h.value[k]
 }
 
 // 获取地址

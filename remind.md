@@ -9,7 +9,33 @@
 5、gate
 5.1、注册(本地注册、远程注册)、心跳、关闭
 
+6、cluster
+6.1 分配用户到网关服务器 http
+6.2 记录全部服务路由，并通知到各个网关 tcp
+
+7、server - 实际服务层
+7.1 支持独立运行
+
+8、运行流程
+8.1 启动server -- tcp
+8.2 启动gate -- http/tcp
+8.3 启动cluster -- http/tcp
+
+
+10、go标准库 https://studygolang.com/pkgdoc
+
 工作安排
 1、gate和服务层分别获取连接
 2、rpc连接池  路由-->client
 3、日志
+
+packet
+    length
+    Data
+Msg
+    route
+    msg_type
+    mid -- 消息id
+    uid -- 系统连接唯一标志
+    deal
+    data

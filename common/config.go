@@ -1,33 +1,23 @@
 package common
 
-var (
-	gateConf      *GateConfig
-	serviceConfig *TcpServiceConfig
-)
+var config *Config
 
-func init() {
-	gateConf = new(GateConfig)
-	serviceConfig = new(TcpServiceConfig)
+// 加载配置文件
+func SetConfig(conf *Config) {
+	config = conf
 }
 
-func SetGateConfig(conf *GateConfig) {
-	if conf == nil {
-		return
-	}
-	gateConf = conf
+// 获取配置
+func GetConfig() *Config {
+	return config
 }
 
-func SetServiceConfig(conf *TcpServiceConfig) {
-	if conf == nil {
-		return
-	}
-	serviceConfig = conf
+type Config struct {
+	Server ServerConfig
 }
 
-func GetGateConfig() *GateConfig {
-	return gateConf
-}
-
-func GetServiceConfig() *TcpServiceConfig {
-	return serviceConfig
+type ServerConfig struct {
+	// 服务器数据
+	Host string
+	Port string
 }

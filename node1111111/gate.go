@@ -28,7 +28,7 @@ func (g *Gate) RunTcp() {
 }
 
 // 接收到包
-func (g *Gate) TcpHandle(h *core.TcpHandle, p *common.TcpPacket) {
+func (g *Gate) TcpHandle(h *core.TcpHandle, p *common.Packet) {
 	// 获取Session, 包含用户的数据
 	s := session.NewGateSession(h)
 	err := s.HandleTcp(p)
@@ -110,7 +110,7 @@ func (g *Gate) RunInner() {
 	core.NewTcpServer(common.GetGateConfig().GateAddr, g.InnerHandle)
 }
 
-func (g *Gate) InnerHandle(h *core.TcpHandle, p *common.TcpPacket) {
+func (g *Gate) InnerHandle(h *core.TcpHandle, p *common.Packet) {
 	// 解析包
 	msg := new(deal.GateRouteRequest)
 	err := common.TcpMsgUnMarsh(p.Data, msg)
@@ -142,7 +142,7 @@ func (g *Gate) InnerHandle(h *core.TcpHandle, p *common.TcpPacket) {
 		log.Println(err.Error())
 		return
 	}
-	resPacket := &common.TcpPacket{
+	resPacket := &common.Packet{
 		Length: uint16(len(resBys)),
 		Data:   resBys,
 	}

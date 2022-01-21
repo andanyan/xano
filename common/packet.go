@@ -5,8 +5,16 @@ import (
 	"encoding/binary"
 )
 
+// tcp数据包结构
+type Packet struct {
+	// 数据源长度
+	Length uint16
+	// 源数据
+	Data []byte
+}
+
 // 包转码
-func PacketMarsh(p *TcpPacket) ([]byte, error) {
+func PacketMarsh(p *Packet) ([]byte, error) {
 	var err error
 	buf := bytes.NewBuffer(nil)
 	err = binary.Write(buf, binary.LittleEndian, p.Length)
@@ -21,14 +29,14 @@ func PacketMarsh(p *TcpPacket) ([]byte, error) {
 }
 
 // 包解析 返回占用字节数、包、错误
-func PacketUnMarsh(bys []byte) (int, []*TcpPacket) {
+func PacketUnMarsh(bys []byte) (int, []*Packet) {
 	var index int
-	var packets []*TcpPacket
+	var packets []*Packet
 	blen := len(bys)
 	for {
-		p := new(TcpPacket)
+		p := new(Packet)
 		headStart := index
-		headEnd := index + TcpPacketHeadLength
+		headEnd := index + PacketHeadLength
 		if headEnd >= blen {
 			break
 		}

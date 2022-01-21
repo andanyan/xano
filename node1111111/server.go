@@ -26,7 +26,7 @@ func (s *Server) Run() {
 	core.NewTcpServer(common.GetGateConfig().TcpAddr, s.Handle)
 }
 
-func (s *Server) Handle(h *core.TcpHandle, p *common.TcpPacket) {
+func (s *Server) Handle(h *core.TcpHandle, p *common.Packet) {
 	ss := session.NewServerSession(h)
 	err := ss.Handle(p)
 	if err != nil {
@@ -52,7 +52,7 @@ func (s *Server) AddGate() {
 		log.Fatalln(err.Error())
 	}
 	// 直接发包即可
-	reqPacket := &common.TcpPacket{
+	reqPacket := &common.Packet{
 		Length: uint16(len(reqBys)),
 		Data:   reqBys,
 	}
@@ -62,7 +62,7 @@ func (s *Server) AddGate() {
 		log.Fatalln(err.Error())
 	}
 	// 服务注册和回包
-	cli.SetHandle(func(h *core.TcpHandle, p *common.TcpPacket) {
+	cli.SetHandle(func(h *core.TcpHandle, p *common.Packet) {
 		// 解析包
 		res := new(deal.GateRouteResponse)
 		err := common.TcpMsgUnMarsh(p.Data, res)
@@ -101,7 +101,7 @@ func (s *Server) CloseGate() {
 		log.Fatalln(err.Error())
 	}
 	// 直接发包即可
-	reqPacket := &common.TcpPacket{
+	reqPacket := &common.Packet{
 		Length: uint16(len(reqBys)),
 		Data:   reqBys,
 	}
