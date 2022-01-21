@@ -77,6 +77,11 @@ func (h *TcpHandle) GetMid() uint64 {
 	return mid
 }
 
+// 获取地址
+func (h *TcpHandle) GetAddr() string {
+	return h.conn.RemoteAddr().String()
+}
+
 // 处理执行
 func (h *TcpHandle) handle() {
 	go h.runSend()

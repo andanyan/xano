@@ -5,10 +5,14 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 	"xlq-server/common"
 )
 
-type Node struct{}
+type Node struct {
+	Gate   *Gate
+	Server *Server
+}
 
 func NewNode() *Node {
 	return new(Node)
@@ -28,12 +32,17 @@ func (n *Node) Run() {
 	gate := NewGate()
 	go gate.RunTcp()
 	go gate.RunHttp()
+	go gate.RunInner()
 
 	// 服务启动
 	server := NewServer()
 	go server.Run()
 	// 加入到gate中
 	go server.AddGate()
+
+	// 赋值
+	n.Gate = gate
+	n.Server = server
 
 	// 监听信号
 	sg := make(chan os.Signal, 1)
@@ -44,10 +53,10 @@ func (n *Node) Run() {
 	// 关闭
 	log.Panicln("server is stopping...")
 	n.Close()
+	time.Sleep(3 * time.Second)
 	log.Panicln("server stopped")
 }
 
 func (n *Node) Close() {
-	// 数据维护和存储
-
+	n.Server.CloseGate()
 }

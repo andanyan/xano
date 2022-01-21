@@ -17,9 +17,16 @@ const (
 // tcp请求信息
 const (
 	// 服务注册时差
-	TcpHeartDuration time.Duration = 60
+	TcpHeartDuration time.Duration = 30
 	// TCP请求超时市场
 	TcpDeadDuration time.Duration = 30
+)
+
+// status
+const (
+	StatusZero int = iota
+	StatusOne
+	StatusTwo
 )
 
 // 网关相关配置
@@ -34,12 +41,15 @@ type GateConfig struct {
 	// http协议
 	HttpDeal uint8
 
-	// 网关网络地址
+	// bending网关监听地址
 	GateAddr string
 }
 
 // tcp服务层配置
 type TcpServiceConfig struct {
+	// 远程网关地址
+	GateAddr string
+	// 本地服务地址
 	Addr string
 }
 

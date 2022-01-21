@@ -28,16 +28,19 @@ message Msg {
 
 // 路由注册
 message GateRouteRequest {
+    // 行为 0-正常 1-关闭
+    uint32 status = 1;
     // 端口
-    string port = 1;
+    string port = 2;
     // 路由列表
-    repeated string routes = 2;
+    repeated string routes = 3;
 }
 
 // 路由注册回包
 message GateRouteItem {
-    string addr = 1;
-    repeated string routes = 2;
+    int64 lastTime = 1;
+    string addr = 2;
+    repeated string routes = 3;
 }
 message GateRouteResponse {
     // 路由列表

@@ -9,7 +9,10 @@ import (
 	"xlq-server/session"
 )
 
-type Server struct{}
+type Server struct {
+	GateStatus bool
+	GateClient *core.TcpClient
+}
 
 func NewServer() *Server {
 	return new(Server)
@@ -33,16 +36,16 @@ func (s *Server) Handle(h *core.TcpHandle, p *common.TcpPacket) {
 
 // 加入到节点中 即注册
 func (s *Server) AddGate() {
-	if common.GetGateConfig().GateAddr == "" {
+	if common.GetServiceConfig().GateAddr == "" {
 		return
 	}
-	addr, err := common.ParseIpAddr(common.GetGateConfig().GateAddr)
+	addr, err := common.ParseIpAddr(common.GetServiceConfig().GateAddr)
 	if err != nil {
 		log.Fatalln(err.Error())
 	}
 	req := &deal.GateRouteRequest{
 		Port:   addr.Port,
-		Routes: core.GetAllRoute(),
+		Routes: core.GetLocalRoute(),
 	}
 	reqBys, err := common.TcpMsgMarsh(req)
 	if err != nil {
@@ -70,8 +73,40 @@ func (s *Server) AddGate() {
 		core.SetRoutes(res)
 	})
 
-	for {
+	s.GateStatus = true
+	s.GateClient = cli
+
+	for s.GateStatus {
 		cli.Send(reqPacket)
 		time.Sleep(common.TcpHeartDuration)
 	}
+}
+
+// 关闭节点
+func (s *Server) CloseGate() {
+	if s.GateClient == nil {
+		return
+	}
+	addr, err := common.ParseIpAddr(common.GetServiceConfig().GateAddr)
+	if err != nil {
+		log.Fatalln(err.Error())
+	}
+	req := &deal.GateRouteRequest{
+		Status: 1,
+		Port:   addr.Port,
+		//Routes: core.GetLocalRoute(),
+	}
+	reqBys, err := common.TcpMsgMarsh(req)
+	if err != nil {
+		log.Fatalln(err.Error())
+	}
+	// 直接发包即可
+	reqPacket := &common.TcpPacket{
+		Length: uint16(len(reqBys)),
+		Data:   reqBys,
+	}
+	// 发包
+	s.GateClient.Send(reqPacket)
+
+	s.GateStatus = false
 }

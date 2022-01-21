@@ -13,7 +13,7 @@ type Service struct {
 	// route => ServiceComponent
 	Components map[string]*ServiceComponent
 	// route => []addr
-	Routes map[string][]string
+	RemoteRoutes map[string][]string
 }
 
 // 服务组件
@@ -86,7 +86,7 @@ func RegisterComponent(comp interface{}) {
 }
 
 // 获取全部的路由服务
-func GetAllRoute() []string {
+func GetLocalRoute() []string {
 	var res []string
 	for r, _ := range service.Components {
 		res = append(res, r)
@@ -100,14 +100,14 @@ func SetRoutes(res *deal.GateRouteResponse) {
 	defer service.Unlock()
 
 	// route = []addr
-	service.Routes = make(map[string][]string)
+	service.RemoteRoutes = make(map[string][]string)
 	for _, item := range res.Routes {
 		for _, r := range item.Routes {
-			addrs, ok := service.Routes[r]
+			addrs, ok := service.RemoteRoutes[r]
 			if !ok {
 				addrs = []string{}
 			}
-			service.Routes[r] = append(addrs, item.Addr)
+			service.RemoteRoutes[r] = append(addrs, item.Addr)
 		}
 	}
 }
