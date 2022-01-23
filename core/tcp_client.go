@@ -1,6 +1,8 @@
 package core
 
-import "net"
+import (
+	"net"
+)
 
 type TcpClient struct {
 	*TcpHandle

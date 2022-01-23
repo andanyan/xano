@@ -4,7 +4,7 @@ import "time"
 
 // tcp协议类型
 const (
-	TcpDealProtobuf uint8 = iota + 1
+	TcpDealProtobuf uint32 = iota + 1
 	TcpDealJson
 )
 
@@ -17,9 +17,9 @@ const (
 // tcp请求信息
 const (
 	// 服务注册时差
-	TcpHeartDuration time.Duration = 30
+	TcpHeartDuration time.Duration = 60
 	// TCP请求超时市场
-	TcpDeadDuration time.Duration = 30
+	TcpDeadDuration time.Duration = 60
 )
 
 // status
@@ -27,4 +27,20 @@ const (
 	StatusZero int = iota
 	StatusOne
 	StatusTwo
+)
+
+// msg type
+const (
+	MsgTypeNone uint32 = iota
+	MsgTypeRequest
+	MsgTypeResponse
+	MsgTypeNotice
+	MsgTypePush
+	MsgTypeRpc
+)
+
+// handle key
+const (
+	HandleKeyMid     string = "Mid"
+	HandleKeyTcpAddr string = "TcpAddr"
 )

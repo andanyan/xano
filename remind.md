@@ -25,17 +25,6 @@
 10、go标准库 https://studygolang.com/pkgdoc
 
 工作安排
-1、gate和服务层分别获取连接
-2、rpc连接池  路由-->client
-3、日志
+1、heart包封装一下算球
 
-packet
-    length
-    Data
-Msg
-    route
-    msg_type
-    mid -- 消息id
-    uid -- 系统连接唯一标志
-    deal
-    data
+

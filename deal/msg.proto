@@ -18,31 +18,34 @@ message Msg {
     // 消息id
     // @inject_tag: json:"mid"
     uint64 mid = 2;
+    // 消息类型
+    uint32 msg_type = 3;
     // data数据协议
     // @inject_tag: json:"deal"
-    uint32 deal = 3;
+    uint32 deal = 4;
     // 数据
     // @inject_tag: json:"data"
-    bytes data = 4;
+    bytes data = 5;
 }
 
 // 路由注册
-message GateRouteRequest {
-    // 行为 0-正常 1-关闭
-    uint32 status = 1;
+message ServerRunNotice {
+    // 版本号
+    string version = 1;
     // 端口
     string port = 2;
     // 路由列表
     repeated string routes = 3;
 }
 
-// 路由注册回包
-message GateRouteItem {
-    int64 lastTime = 1;
-    string addr = 2;
-    repeated string routes = 3;
-}
-message GateRouteResponse {
-    // 路由列表
-    repeated GateRouteItem routes = 1;
+// 心跳
+message ServerHeartRequest {}
+
+message ServerHeartResponse {}
+
+// 路由关闭
+message ServerCloseNotice {
+    string version = 1;
+    string port = 2;
+    
 }

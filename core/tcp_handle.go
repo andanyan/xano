@@ -5,6 +5,7 @@ import (
 	"log"
 	"net"
 	"sync"
+	"sync/atomic"
 	"xlq-server/common"
 )
 
@@ -20,6 +21,8 @@ type TcpHandle struct {
 	sendChan   chan *common.Packet
 	readChan   chan *common.Packet
 	handleFunc TcpHandleFunc
+	// 消息id
+	mid uint64
 }
 
 func NewTcpHandle(conn net.Conn) *TcpHandle {
@@ -67,9 +70,25 @@ func (h *TcpHandle) Get(k string) interface{} {
 	return h.value[k]
 }
 
+// 删除值
+func (h *TcpHandle) Del(k string) {
+	h.Lock()
+	defer h.Unlock()
+	delete(h.value, k)
+}
+
 // 获取地址
 func (h *TcpHandle) GetAddr() string {
 	return h.conn.RemoteAddr().String()
+}
+
+// 获取连接状态
+func (h *TcpHandle) Status() bool {
+	return h.status
+}
+
+func (h *TcpHandle) GetMid() uint64 {
+	return atomic.AddUint64(&h.mid, 1)
 }
 
 // 处理执行

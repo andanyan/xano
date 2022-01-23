@@ -17,7 +17,13 @@ type Config struct {
 }
 
 type ServerConfig struct {
-	// 服务器数据
+	// 服务器地址
 	Host string
 	Port string
+
+	// 通信的网关地址
+	GateAddr string
+
+	// 版本号
+	Version string
 }

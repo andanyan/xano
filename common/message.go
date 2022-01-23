@@ -7,19 +7,12 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-// tcp的协议加密
-func TcpMsgMarsh(input interface{}) ([]byte, error) {
-	return MsgMarsh(GetGateConfig().TcpDeal, input)
-}
-
-// tcp的协议解密
-func TcpMsgUnMarsh(msg []byte, output interface{}) error {
-	return MsgUnMarsh(GetGateConfig().TcpDeal, msg, output)
-}
-
 // 加密协议
-func MsgMarsh(deal uint8, input interface{}) ([]byte, error) {
+func MsgMarsh(deal uint32, input interface{}) ([]byte, error) {
 	// 默认protobuf
+	if deal < TcpDealProtobuf || deal > TcpDealJson {
+		deal = TcpDealProtobuf
+	}
 	switch deal {
 	case TcpDealProtobuf:
 		pb, ok := input.(proto.Message)
@@ -34,7 +27,10 @@ func MsgMarsh(deal uint8, input interface{}) ([]byte, error) {
 }
 
 // 解密协议
-func MsgUnMarsh(deal uint8, msg []byte, output interface{}) error {
+func MsgUnMarsh(deal uint32, msg []byte, output interface{}) error {
+	if deal < TcpDealProtobuf || deal > TcpDealJson {
+		deal = TcpDealProtobuf
+	}
 	switch deal {
 	case TcpDealProtobuf:
 		pb, ok := output.(proto.Message)
