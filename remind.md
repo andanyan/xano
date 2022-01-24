@@ -25,6 +25,5 @@
 10、go标准库 https://studygolang.com/pkgdoc
 
 工作安排
-1、heart包封装一下算球
-2、ip连接池建立
-
+1、网关层建设 master,member
+2、日志logger

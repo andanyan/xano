@@ -19,8 +19,9 @@ func NewTcpClient(addr string) (*TcpClient, error) {
 		return nil, err
 	}
 	h := NewTcpHandle(conn)
-	h.handle()
-
+	go h.handle()
+	// 开启心跳
+	go h.ping()
 	return &TcpClient{
 		TcpHandle: h,
 	}, nil

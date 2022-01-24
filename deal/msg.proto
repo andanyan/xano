@@ -28,6 +28,15 @@ message Msg {
     bytes data = 5;
 }
 
+// 心跳
+message Ping {
+    int64 ping = 1;
+}
+message Pong {
+    int64 pong = 1;
+}
+
+
 // 路由注册
 message ServerRunNotice {
     // 版本号
@@ -37,11 +46,6 @@ message ServerRunNotice {
     // 路由列表
     repeated string routes = 3;
 }
-
-// 心跳
-message ServerHeartRequest {}
-
-message ServerHeartResponse {}
 
 // 路由关闭
 message ServerCloseNotice {

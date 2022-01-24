@@ -33,17 +33,20 @@ func (s *Session) Rpc(route string, input, output interface{}) error {
 	// 向网关主节点发送Rpc请求
 	tcpAddr := s.Get(common.HandleKeyTcpAddr).(string)
 
-	cli, err := core.NewTcpClient(tcpAddr)
+	// 获取连接
+	pool := core.GetPool(tcpAddr)
+	poolObj, err := pool.Get()
 	if err != nil {
 		return err
 	}
-	defer cli.Close()
+	defer pool.Recycle(poolObj)
 
-	cli.Send(inputPacket)
+	// 发送包
+	poolObj.Client.Send(inputPacket)
 
 	// 收到Response包才认为已完成、其他包直接发射回去即可
 	c := make(chan struct{})
-	cli.SetHandle(func(h *core.TcpHandle, p *common.Packet) {
+	poolObj.Client.SetHandle(func(h *core.TcpHandle, p *common.Packet) {
 		rmsg := new(deal.Msg)
 		err := common.MsgUnMarsh(common.TcpDealProtobuf, p.Data, rmsg)
 		if err != nil {
@@ -67,7 +70,7 @@ func (s *Session) Rpc(route string, input, output interface{}) error {
 			c <- struct{}{}
 		}
 	})
-	defer cli.SetHandle(nil)
+	defer poolObj.Client.SetHandle(nil)
 
 	t := time.NewTimer(common.TcpDeadDuration)
 

@@ -2,7 +2,6 @@ package server
 
 import (
 	"log"
-	"time"
 	"xlq-server/common"
 	"xlq-server/core"
 	"xlq-server/deal"
@@ -66,8 +65,6 @@ func (g *Gate) Run() {
 	}
 	g.Send(packet)
 
-	// 心跳处理
-	go g.heart()
 }
 
 // 停止运行
@@ -101,41 +98,4 @@ func (g *Gate) Close() {
 		Data:   msgBys,
 	}
 	g.Send(packet)
-}
-
-// 心跳处理
-func (g *Gate) heart() {
-	input := &deal.ServerHeartRequest{}
-	inputBys, err := common.MsgMarsh(common.TcpDealProtobuf, input)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	msg := &deal.Msg{
-		Route:   "ServerHeart",
-		Mid:     g.GetMid(),
-		MsgType: common.MsgTypeRequest,
-		Deal:    common.TcpDealProtobuf,
-		Data:    inputBys,
-	}
-	msgBys, err := common.MsgMarsh(common.TcpDealProtobuf, msg)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	packet := &common.Packet{
-		Length: uint16(len(msgBys)),
-		Data:   msgBys,
-	}
-
-	// 持续发送心跳包
-	for g.Status() && !g.IsClose {
-		g.Send(packet)
-		time.Sleep(common.TcpHeartDuration)
-	}
-
-	// 如果断开了,则不断尝试重启
-	for !g.Status() && !g.IsClose {
-		g.Run()
-	}
 }

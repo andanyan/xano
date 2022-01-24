@@ -20,6 +20,11 @@ const (
 	TcpHeartDuration time.Duration = 60
 	// TCP请求超时市场
 	TcpDeadDuration time.Duration = 60
+	// 连接池
+	TcpPoolIdMin int = 0
+	TcpPoolIdMax int = 10
+	// 30分钟
+	TcpPoolLifeTime int64 = 1800
 )
 
 // status
