@@ -45,7 +45,7 @@ func (s *Server) handle(h *core.TcpHandle, p *common.Packet) {
 		h.Set(common.HandleKeyTcpAddr, h.GetAddr())
 
 		// 创建session 提供给接口端使用
-		ss := NewSession(h)
+		ss := GetSession(h)
 		// 调用路由
 		if err = s.handleRoute(ss, msg); err != nil {
 			log.Println(err)

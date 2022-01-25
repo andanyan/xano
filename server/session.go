@@ -13,10 +13,16 @@ type Session struct {
 	*core.TcpHandle
 }
 
-func NewSession(entity *core.TcpHandle) *Session {
-	return &Session{
+func GetSession(entity *core.TcpHandle) *Session {
+	ss := entity.Get(common.HandleKeySession)
+	if ss != nil {
+		return ss.(*Session)
+	}
+	ns := &Session{
 		TcpHandle: entity,
 	}
+	entity.Set(common.HandleKeySession, ns)
+	return ns
 }
 
 // RPC

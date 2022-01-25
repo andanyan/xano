@@ -46,6 +46,7 @@ const (
 
 // handle key
 const (
+	HandleKeySession string = "Session"
 	HandleKeyMid     string = "Mid"
 	HandleKeyTcpAddr string = "TcpAddr"
 )
