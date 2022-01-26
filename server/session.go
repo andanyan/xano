@@ -3,10 +3,12 @@ package server
 import (
 	"fmt"
 	"log"
+	"reflect"
 	"time"
 	"xlq-server/common"
 	"xlq-server/core"
 	"xlq-server/deal"
+	"xlq-server/router"
 )
 
 type Session struct {
@@ -27,10 +29,34 @@ func GetSession(entity *core.TcpHandle) *Session {
 
 // RPC
 func (s *Session) Rpc(route string, input, output interface{}) error {
+	defer func() {
+		if err := recover(); err != nil {
+			fmt.Println(err)
+		}
+	}()
 	if input == nil || output == nil {
 		return fmt.Errorf("error input or output, not allow nil")
 	}
 
+	// 尝试寻找本地服务
+	localRoute := router.GetLocalRoute(route)
+	if localRoute != nil {
+		arg := []reflect.Value{reflect.ValueOf(s), reflect.ValueOf(input)}
+		res := localRoute.Method.Call(arg)
+		if len(res) != 2 {
+			return fmt.Errorf("error %s ouput", route)
+		}
+		err := res[1].Interface()
+		if err != nil {
+			return fmt.Errorf("%+v", err)
+		}
+		if output != nil && res[0].IsValid() {
+			reflect.Indirect(reflect.ValueOf(output)).Set(reflect.Indirect(res[0]))
+		}
+		return nil
+	}
+
+	// 发送远程包
 	inputPacket, err := s.genPacket(route, common.MsgTypeRpc, input)
 	if err != nil {
 		return err

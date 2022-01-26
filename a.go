@@ -2,24 +2,43 @@ package main
 
 import (
 	"fmt"
-	"time"
+	"reflect"
 )
 
+type A struct {
+	Id   int
+	Name string
+}
+
 func main() {
-	c := make(chan struct{})
+	aa := new(A)
+	a(aa)
+	fmt.Printf("%+v\n", aa)
+}
 
-	go func() {
-		time.Sleep(2 * time.Second)
-		c <- struct{}{}
-	}()
+func a(v interface{}) {
+	s := b()
+	fmt.Printf("%+v\n", s)
 
-	select {
-	case <-c:
-		fmt.Println("call successfully!!!")
-		return
-	case <-time.After(time.Duration(3 * time.Second)):
-		fmt.Println("timeout!!!")
+	fv := reflect.Indirect(reflect.ValueOf(v))
+	fmt.Println(fv.CanAddr(), fv.CanInterface(), fv.CanSet())
+
+	fs := reflect.ValueOf(s)
+
+	fmt.Println("sss", fs.IsValid())
+	if !fs.IsValid() {
 		return
 	}
 
+	fv.Set(fs)
+
+}
+
+func b() interface{} {
+	c := A{
+		Id:   1,
+		Name: "xlq",
+	}
+	//var c *A
+	return c
 }
