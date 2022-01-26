@@ -14,6 +14,8 @@ func GetConfig() *Config {
 
 type Config struct {
 	Server ServerConfig
+
+	GateMaster GateMaster
 }
 
 type ServerConfig struct {
@@ -26,4 +28,9 @@ type ServerConfig struct {
 
 	// 版本号
 	Version string
+}
+
+type GateMaster struct {
+	Host string
+	Port string
 }

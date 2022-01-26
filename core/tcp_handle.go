@@ -6,9 +6,7 @@ import (
 	"net"
 	"sync"
 	"sync/atomic"
-	"time"
 	"xlq-server/common"
-	"xlq-server/deal"
 )
 
 type TcpHandleFunc func(h *TcpHandle, p *common.Packet)
@@ -89,6 +87,7 @@ func (h *TcpHandle) Status() bool {
 	return h.status
 }
 
+// 获取消息id
 func (h *TcpHandle) GetMid() uint64 {
 	return atomic.AddUint64(&h.mid, 1)
 }
@@ -100,89 +99,11 @@ func (h *TcpHandle) handle() {
 	h.handleRead()
 }
 
-// 心跳包 仅做保连
-func (h *TcpHandle) ping() {
-	for {
-		time.Sleep(common.TcpHeartDuration)
-
-		ping := &deal.Ping{
-			Ping: time.Now().Unix(),
-		}
-		pingBys, err := common.MsgMarsh(common.TcpDealProtobuf, ping)
-		if err != nil {
-			log.Println(err)
-			continue
-		}
-
-		msg := &deal.Msg{
-			Route:   "Ping",
-			Mid:     h.GetMid(),
-			MsgType: common.MsgTypeRequest,
-			Deal:    common.TcpDealProtobuf,
-			Data:    pingBys,
-		}
-		msgBys, err := common.MsgMarsh(common.TcpDealProtobuf, msg)
-		if err != nil {
-			log.Println(err)
-			continue
-		}
-		packet := &common.Packet{
-			Length: uint16(len(msgBys)),
-			Data:   msgBys,
-		}
-		h.Send(packet)
-	}
-}
-func (h *TcpHandle) pong(p *common.Packet) bool {
-	msg := new(deal.Msg)
-	err := common.MsgUnMarsh(msg.Deal, p.Data, msg)
-	if err != nil {
-		log.Println(err)
-		return true
-	}
-
-	if msg.Route == "Ping" {
-		pong := &deal.Pong{
-			Pong: time.Now().Unix(),
-		}
-		pongBys, err := common.MsgMarsh(common.TcpDealProtobuf, pong)
-		if err != nil {
-			log.Println(err)
-			return true
-		}
-
-		rmsg := &deal.Msg{
-			Route:   "Pong",
-			Mid:     msg.Mid,
-			MsgType: common.MsgTypeResponse,
-			Deal:    common.TcpDealProtobuf,
-			Data:    pongBys,
-		}
-		rmsgBys, err := common.MsgMarsh(common.TcpDealProtobuf, rmsg)
-		if err != nil {
-			log.Println(err)
-			return true
-		}
-		packet := &common.Packet{
-			Length: uint16(len(rmsgBys)),
-			Data:   rmsgBys,
-		}
-		h.Send(packet)
-		return true
-	}
-
-	return false
-}
-
 // 包处理
 func (h *TcpHandle) runRead() {
 	for p := range h.readChan {
 		if !h.status {
 			break
-		}
-
-		if h.pong(p) {
-			continue
 		}
 
 		if h.handleFunc != nil {

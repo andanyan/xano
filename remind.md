@@ -25,5 +25,10 @@
 10、go标准库 https://studygolang.com/pkgdoc
 
 工作安排
+0、session抽取。
 1、网关层建设 master,member
 2、日志logger
+
+优化
+1、session抽取
+2、路由设定

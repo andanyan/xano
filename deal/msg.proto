@@ -36,7 +36,6 @@ message Pong {
     int64 pong = 1;
 }
 
-
 // 路由注册
 message ServerRunNotice {
     // 版本号
@@ -51,5 +50,4 @@ message ServerRunNotice {
 message ServerCloseNotice {
     string version = 1;
     string port = 2;
-    
 }

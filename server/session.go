@@ -39,7 +39,7 @@ func (s *Session) Rpc(route string, input, output interface{}) error {
 	}
 
 	// 尝试寻找本地服务
-	localRoute := router.GetLocalRoute(route)
+	localRoute := router.LocalRouter.GetRoute(route)
 	if localRoute != nil {
 		arg := []reflect.Value{reflect.ValueOf(s), reflect.ValueOf(input)}
 		res := localRoute.Method.Call(arg)

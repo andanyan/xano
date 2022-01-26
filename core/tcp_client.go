@@ -20,8 +20,6 @@ func NewTcpClient(addr string) (*TcpClient, error) {
 	}
 	h := NewTcpHandle(conn)
 	go h.handle()
-	// 开启心跳
-	go h.ping()
 	return &TcpClient{
 		TcpHandle: h,
 	}, nil

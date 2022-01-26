@@ -23,7 +23,7 @@ func (s *Server) Run() {
 	if addr == "" {
 		return
 	}
-	log.Printf("Gate Service Address: %s \n", addr)
+	log.Printf("Server Start: %s \n", addr)
 	core.NewTcpServer(addr, s.handle)
 }
 
@@ -61,7 +61,7 @@ func (s *Server) handle(h *core.TcpHandle, p *common.Packet) {
 
 func (s *Server) handleRoute(ss *Session, msg *deal.Msg) error {
 	// 获取路由
-	route := router.GetLocalRoute(msg.Route)
+	route := router.LocalRouter.GetRoute(msg.Route)
 	if route == nil {
 		return fmt.Errorf("error route " + msg.Route)
 	}

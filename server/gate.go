@@ -2,6 +2,7 @@ package server
 
 import (
 	"log"
+	"time"
 	"xlq-server/common"
 	"xlq-server/core"
 	"xlq-server/deal"
@@ -35,8 +36,16 @@ func (g *Gate) Run() {
 	// 不需要设置回包函数
 	g.TcpClient = t
 
+	g.Start()
+
+	// 开启心跳
+	go g.Heartbert()
+}
+
+// 发送同步路由包
+func (g *Gate) Start() {
 	// 同步路由
-	routes := router.GetLocalRoutes()
+	routes := router.LocalRouter.GetDescs()
 	input := &deal.ServerRunNotice{
 		Version: g.Conf.Version,
 		Port:    g.Conf.Port,
@@ -48,7 +57,7 @@ func (g *Gate) Run() {
 		return
 	}
 	msg := &deal.Msg{
-		Route:   "ServerRun",
+		Route:   "ServerStart",
 		Mid:     g.GetMid(),
 		MsgType: common.MsgTypeNotice,
 		Deal:    common.TcpDealProtobuf,
@@ -64,7 +73,6 @@ func (g *Gate) Run() {
 		Data:   msgBys,
 	}
 	g.Send(packet)
-
 }
 
 // 停止运行
@@ -98,4 +106,37 @@ func (g *Gate) Close() {
 		Data:   msgBys,
 	}
 	g.Send(packet)
+}
+
+// 定时发送心跳包
+func (g *Gate) Heartbert() {
+	for {
+		time.Sleep(common.TcpHeartDuration)
+
+		ping := &deal.Ping{
+			Ping: time.Now().Unix(),
+		}
+		pingBys, err := common.MsgMarsh(common.TcpDealProtobuf, ping)
+		if err != nil {
+			log.Println(err)
+			continue
+		}
+		msg := &deal.Msg{
+			Route:   "Heartbert",
+			Mid:     g.GetMid(),
+			MsgType: common.MsgTypeRequest,
+			Deal:    common.TcpDealProtobuf,
+			Data:    pingBys,
+		}
+		msgBys, err := common.MsgMarsh(common.TcpDealProtobuf, msg)
+		if err != nil {
+			log.Println(err)
+			continue
+		}
+		packet := &common.Packet{
+			Length: uint16(len(msgBys)),
+			Data:   msgBys,
+		}
+		g.Send(packet)
+	}
 }
