@@ -7,9 +7,10 @@ import (
 	"sync"
 	"sync/atomic"
 	"xlq-server/common"
+	"xlq-server/deal"
 )
 
-type TcpHandleFunc func(h *TcpHandle, p *common.Packet)
+type TcpHandleFunc func(h *TcpHandle, m *deal.Msg)
 
 type TcpHandle struct {
 	value map[string]interface{}
@@ -49,10 +50,21 @@ func (h *TcpHandle) Close() {
 }
 
 // 包入列
-func (h *TcpHandle) Send(p *common.Packet) {
+func (h *TcpHandle) Send(m *deal.Msg) {
 	if !h.status {
 		return
 	}
+
+	msgBys, err := common.MsgMarsh(common.TcpDealProtobuf, m)
+	if err != nil {
+		log.Panicln(err)
+		return
+	}
+	p := &common.Packet{
+		Length: uint16(len(msgBys)),
+		Data:   msgBys,
+	}
+
 	h.sendChan <- p
 }
 
@@ -107,7 +119,20 @@ func (h *TcpHandle) runRead() {
 		}
 
 		if h.handleFunc != nil {
-			h.handleFunc(h, p)
+			msg := new(deal.Msg)
+			err := common.MsgUnMarsh(common.TcpDealProtobuf, p.Data, msg)
+			if err != nil {
+				log.Println(err)
+				continue
+			}
+			// 消息id序号校验
+			mmid := h.Get(common.HandleKeyMid)
+			if mmid != nil && mmid.(uint64) != msg.Mid-1 {
+				continue
+			}
+			// 设置当前消息id
+			h.Set(common.HandleKeyMid, msg.Mid)
+			h.handleFunc(h, msg)
 		}
 	}
 }

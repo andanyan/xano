@@ -13,9 +13,17 @@ func GetConfig() *Config {
 }
 
 type Config struct {
+	Base Base
+
 	Server ServerConfig
 
 	GateMaster GateMaster
+
+	GateMember GateMember
+}
+
+type Base struct {
+	Version string
 }
 
 type ServerConfig struct {
@@ -25,12 +33,17 @@ type ServerConfig struct {
 
 	// 通信的网关地址
 	GateAddr string
-
-	// 版本号
-	Version string
 }
 
 type GateMaster struct {
 	Host string
 	Port string
+}
+
+type GateMember struct {
+	Host string
+	Port string
+	// 主节点地址
+	MasterAddr string
+	// 版本号
 }

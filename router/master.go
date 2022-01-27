@@ -3,6 +3,7 @@ package router
 import (
 	"sync"
 	"time"
+	"xlq-server/deal"
 )
 
 // 主节点路由
@@ -13,14 +14,7 @@ type MasterNode struct {
 	sync.RWMutex
 
 	// addr -> MasterNodeItem
-	Data map[string]*MasterNodeItem
-}
-type MasterNodeItem struct {
-	LastTime int64
-	Status   bool
-	Version  string
-	Addr     string
-	Routes   []string
+	Data map[string]*deal.NodeItem
 }
 
 var masterNode *MasterNode
@@ -28,7 +22,7 @@ var masterNode *MasterNode
 func GetMasterNode() *MasterNode {
 	if masterNode == nil {
 		masterNode = new(MasterNode)
-		masterNode.Data = make(map[string]*MasterNodeItem)
+		masterNode.Data = make(map[string]*deal.NodeItem)
 	}
 	return masterNode
 }
@@ -42,7 +36,7 @@ func (m *MasterNode) AddNode(addr, version string, routes []string) bool {
 		return false
 	}
 
-	m.Data[addr] = &MasterNodeItem{
+	m.Data[addr] = &deal.NodeItem{
 		LastTime: time.Now().Unix(),
 		Status:   true,
 		Version:  version,
@@ -77,10 +71,10 @@ func (m *MasterNode) UpdateTime(addr string, t int64) {
 }
 
 // 获取全部节点
-func (m *MasterNode) GetAllNode() []*MasterNodeItem {
+func (m *MasterNode) GetAllNode() []*deal.NodeItem {
 	m.RLock()
 	defer m.RUnlock()
-	res := make([]*MasterNodeItem, 0)
+	res := make([]*deal.NodeItem, 0)
 	for _, node := range m.Data {
 		res = append(res, node)
 	}

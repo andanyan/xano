@@ -46,8 +46,8 @@ func (g *Gate) Run() {
 func (g *Gate) Start() {
 	// 同步路由
 	routes := router.LocalRouter.GetDescs()
-	input := &deal.ServerRunNotice{
-		Version: g.Conf.Version,
+	input := &deal.ServerStartNotice{
+		Version: common.GetConfig().Base.Version,
 		Port:    g.Conf.Port,
 		Routes:  routes,
 	}
@@ -63,16 +63,7 @@ func (g *Gate) Start() {
 		Deal:    common.TcpDealProtobuf,
 		Data:    inputBys,
 	}
-	msgBys, err := common.MsgMarsh(common.TcpDealProtobuf, msg)
-	if err != nil {
-		log.Panicln(err)
-		return
-	}
-	packet := &common.Packet{
-		Length: uint16(len(msgBys)),
-		Data:   msgBys,
-	}
-	g.Send(packet)
+	g.Send(msg)
 }
 
 // 停止运行
@@ -80,10 +71,7 @@ func (g *Gate) Close() {
 	g.IsClose = true
 
 	// 发送服务断开包
-	input := &deal.ServerCloseNotice{
-		Version: g.Conf.Version,
-		Port:    g.Conf.Port,
-	}
+	input := &deal.ServerCloseNotice{}
 	inputBys, err := common.MsgMarsh(common.TcpDealProtobuf, input)
 	if err != nil {
 		log.Println(err)
@@ -96,16 +84,7 @@ func (g *Gate) Close() {
 		Deal:    common.TcpDealProtobuf,
 		Data:    inputBys,
 	}
-	msgBys, err := common.MsgMarsh(common.TcpDealProtobuf, msg)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	packet := &common.Packet{
-		Length: uint16(len(msgBys)),
-		Data:   msgBys,
-	}
-	g.Send(packet)
+	g.Send(msg)
 }
 
 // 定时发送心跳包
@@ -128,15 +107,6 @@ func (g *Gate) Heartbert() {
 			Deal:    common.TcpDealProtobuf,
 			Data:    pingBys,
 		}
-		msgBys, err := common.MsgMarsh(common.TcpDealProtobuf, msg)
-		if err != nil {
-			log.Println(err)
-			continue
-		}
-		packet := &common.Packet{
-			Length: uint16(len(msgBys)),
-			Data:   msgBys,
-		}
-		g.Send(packet)
+		g.Send(msg)
 	}
 }

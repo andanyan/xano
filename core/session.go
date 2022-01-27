@@ -1,4 +1,4 @@
-package server
+package core
 
 import (
 	"fmt"
@@ -6,16 +6,15 @@ import (
 	"reflect"
 	"time"
 	"xlq-server/common"
-	"xlq-server/core"
 	"xlq-server/deal"
 	"xlq-server/router"
 )
 
 type Session struct {
-	*core.TcpHandle
+	*TcpHandle
 }
 
-func GetSession(entity *core.TcpHandle) *Session {
+func GetSession(entity *TcpHandle) *Session {
 	ss := entity.Get(common.HandleKeySession)
 	if ss != nil {
 		return ss.(*Session)
@@ -38,35 +37,20 @@ func (s *Session) Rpc(route string, input, output interface{}) error {
 		return fmt.Errorf("error input or output, not allow nil")
 	}
 
-	// 尝试寻找本地服务
-	localRoute := router.LocalRouter.GetRoute(route)
-	if localRoute != nil {
-		arg := []reflect.Value{reflect.ValueOf(s), reflect.ValueOf(input)}
-		res := localRoute.Method.Call(arg)
-		if len(res) != 2 {
-			return fmt.Errorf("error %s ouput", route)
-		}
-		err := res[1].Interface()
-		if err != nil {
-			return fmt.Errorf("%+v", err)
-		}
-		if output != nil && res[0].IsValid() {
-			reflect.Indirect(reflect.ValueOf(output)).Set(reflect.Indirect(res[0]))
-		}
-		return nil
-	}
-
 	// 发送远程包
-	inputPacket, err := s.genPacket(route, common.MsgTypeRpc, input)
+	msg, err := s.genMsg(route, common.MsgTypeRpc, input)
 	if err != nil {
 		return err
 	}
 
 	// 向网关主节点发送Rpc请求
 	tcpAddr := s.Get(common.HandleKeyTcpAddr).(string)
+	if tcpAddr == "" {
+		return fmt.Errorf("has no server: %s", route)
+	}
 
 	// 获取连接
-	pool := core.GetPool(tcpAddr)
+	pool := GetPool(tcpAddr)
 	poolObj, err := pool.Get()
 	if err != nil {
 		return err
@@ -74,31 +58,25 @@ func (s *Session) Rpc(route string, input, output interface{}) error {
 	defer pool.Recycle(poolObj)
 
 	// 发送包
-	poolObj.Client.Send(inputPacket)
+	poolObj.Client.Send(msg)
 
 	// 收到Response包才认为已完成、其他包直接发射回去即可
 	c := make(chan struct{})
-	poolObj.Client.SetHandle(func(h *core.TcpHandle, p *common.Packet) {
-		rmsg := new(deal.Msg)
-		err := common.MsgUnMarsh(common.TcpDealProtobuf, p.Data, rmsg)
-		if err != nil {
-			log.Println(err)
-			return
-		}
+	poolObj.Client.SetHandle(func(h *TcpHandle, m *deal.Msg) {
 		mmid := s.Get(common.HandleKeyMid).(uint64)
-		if rmsg.Mid == mmid {
+		if m.Mid == mmid {
 			// 非Response的类型，直接返回给客户端
-			if rmsg.MsgType != common.MsgTypeResponse {
-				s.Send(p)
+			if m.MsgType != common.MsgTypeResponse {
+				s.Send(m)
 				return
 			}
-			err := common.MsgUnMarsh(common.TcpDealProtobuf, rmsg.Data, output)
+			err := common.MsgUnMarsh(common.TcpDealProtobuf, m.Data, output)
 			if err != nil {
 				log.Println(err)
 			}
 			c <- struct{}{}
 
-		} else if rmsg.Mid > mmid {
+		} else if m.Mid > mmid {
 			c <- struct{}{}
 		}
 	})
@@ -118,27 +96,27 @@ func (s *Session) Rpc(route string, input, output interface{}) error {
 
 // Response
 func (s *Session) Response(route string, input interface{}) error {
-	inputPacket, err := s.genPacket(route, common.MsgTypeResponse, input)
+	msg, err := s.genMsg(route, common.MsgTypeResponse, input)
 	if err != nil {
 		return err
 	}
-	s.Send(inputPacket)
+	s.Send(msg)
 	return nil
 }
 
 // Push
 func (s *Session) Push(route string, input interface{}) error {
 	// 组装包 写入连接即可
-	inputPacket, err := s.genPacket(route, common.MsgTypePush, input)
+	msg, err := s.genMsg(route, common.MsgTypePush, input)
 	if err != nil {
 		return err
 	}
-	s.Send(inputPacket)
+	s.Send(msg)
 	return nil
 }
 
 // 向连接写入包
-func (s *Session) genPacket(route string, msgType uint32, input interface{}) (*common.Packet, error) {
+func (s *Session) genMsg(route string, msgType uint32, input interface{}) (*deal.Msg, error) {
 	// 组装包 写入连接即可
 	inputBys, err := common.MsgMarsh(common.TcpDealProtobuf, input)
 	if err != nil {
@@ -151,14 +129,34 @@ func (s *Session) genPacket(route string, msgType uint32, input interface{}) (*c
 		Deal:    common.TcpDealProtobuf,
 		Data:    inputBys,
 	}
-	msgBys, err := common.MsgMarsh(common.TcpDealProtobuf, msg)
-	if err != nil {
-		return nil, err
-	}
-	inputPacket := &common.Packet{
-		Length: uint16(len(msgBys)),
-		Data:   msgBys,
+
+	return msg, nil
+}
+
+// 处理路由
+func (s *Session) HandleRoute(r *router.Router, m *deal.Msg) error {
+	// 获取路由
+	route := r.GetRoute(m.Route)
+	if route == nil {
+		return fmt.Errorf("error route " + m.Route)
 	}
 
-	return inputPacket, nil
+	// 解析输入
+	input := reflect.New(route.Input).Interface()
+	err := common.MsgUnMarsh(m.Deal, m.Data, input)
+	if err != nil {
+		return err
+	}
+
+	// 调用函数
+	arg := []reflect.Value{reflect.ValueOf(s), reflect.ValueOf(input)}
+	res := route.Method.Call(arg)
+
+	if len(res) == 0 {
+		return nil
+	}
+	if err := res[0].Interface(); err != nil {
+		return fmt.Errorf("%+v", err)
+	}
+	return nil
 }

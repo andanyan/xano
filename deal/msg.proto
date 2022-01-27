@@ -26,6 +26,8 @@ message Msg {
     // 数据
     // @inject_tag: json:"data"
     bytes data = 5;
+    // 版本号
+    string version = 6;
 }
 
 // 心跳
@@ -37,7 +39,7 @@ message Pong {
 }
 
 // 路由注册
-message ServerRunNotice {
+message ServerStartNotice {
     // 版本号
     string version = 1;
     // 端口
@@ -47,7 +49,28 @@ message ServerRunNotice {
 }
 
 // 路由关闭
-message ServerCloseNotice {
+message ServerCloseNotice {}
+
+// 节点信息
+message NodeItem {
+    int64 lastTime = 1;
+    bool status = 2;
+    string version = 3;
+    string addr = 4;
+    repeated string routes = 5;
+}
+
+// 获取全局路由
+message AllNodeRequest {
     string version = 1;
-    string port = 2;
+}
+
+message AllNodeResponse {
+    repeated NodeItem nodes = 1;
+}
+
+message MasterInfoRequest {}
+
+message MasterInfoResponse {
+    repeated NodeItem nodes = 1;
 }
