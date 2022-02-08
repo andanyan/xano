@@ -34,20 +34,7 @@ func (s *MasterServer) ServerClose(ss *core.Session, input *deal.ServerCloseNoti
 	return nil
 }
 
-// 节点心跳
-func (s *MasterServer) Heartbert(ss *core.Session, input *deal.Ping) error {
-	remoteAddr := ss.Get(common.HandleKeyTcpAddr).(string)
-	if remoteAddr == "" {
-		return fmt.Errorf("unkoned remote addr")
-	}
-	timeNow := time.Now().Unix()
-	router.GetMasterNode().UpdateTime(remoteAddr, timeNow)
-	return ss.Response("Heartbert", &deal.Pong{
-		Pong: timeNow,
-	})
-}
-
-// 获取全部节点
+// 获取全部可用节点
 func (s *MasterServer) AllNode(ss *core.Session, input *deal.AllNodeRequest) error {
 	nodes := router.GetMasterNode().GetAllNode()
 

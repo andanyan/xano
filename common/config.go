@@ -23,6 +23,7 @@ type Config struct {
 }
 
 type Base struct {
+	// 版本号
 	Version string
 }
 
@@ -36,8 +37,8 @@ type ServerConfig struct {
 }
 
 type GateMaster struct {
-	Host string
-	Port string
+	TcpAddr  string
+	HttpAddr string
 }
 
 type GateMember struct {
@@ -45,5 +46,4 @@ type GateMember struct {
 	Port string
 	// 主节点地址
 	MasterAddr string
-	// 版本号
 }

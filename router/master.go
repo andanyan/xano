@@ -33,6 +33,7 @@ func (m *MasterNode) AddNode(addr, version string, routes []string) bool {
 	defer m.Unlock()
 
 	if m.Data[addr] != nil {
+		m.Data[addr].LastTime = time.Now().Unix()
 		return false
 	}
 
@@ -56,18 +57,6 @@ func (m *MasterNode) RemoveNode(addr string) {
 	}
 
 	m.Data[addr].Status = false
-}
-
-// 更改时间
-func (m *MasterNode) UpdateTime(addr string, t int64) {
-	m.Lock()
-	defer m.Unlock()
-
-	if m.Data[addr] == nil {
-		return
-	}
-
-	m.Data[addr].LastTime = t
 }
 
 // 获取全部节点

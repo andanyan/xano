@@ -20,9 +20,13 @@ const (
 	TcpHeartDuration time.Duration = 60
 	// TCP请求超时市场
 	TcpDeadDuration time.Duration = 60
+	// HTTP请求超时时间
+	HttpDeadDuration time.Duration = 60
 	// 连接池
 	TcpPoolIdMin int = 0
 	TcpPoolIdMax int = 10
+	// 获取对象最长等待时长 单位毫秒
+	TcpPoolMaxWaitTime int = 1000
 	// 30分钟
 	TcpPoolLifeTime int64 = 1800
 )

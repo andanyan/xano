@@ -25,11 +25,4 @@
 10、go标准库 https://studygolang.com/pkgdoc
 
 工作安排
-0、session抽取。
-1、网关层建设 master,member
-2、日志logger
-
-优化
-1、gate继续完善、客户端 -- ok
-1、主节点的http || tcp服务，返回全部可用的客户端连接。
-2、pool优化
+1、日志logger

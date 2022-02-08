@@ -16,9 +16,13 @@ type Pool struct {
 // 连接池对象
 type PoolItem struct {
 	sync.RWMutex
-	Objs     []*PoolObj
-	IdMin    int
-	IdMax    int
+	Objs chan *PoolObj
+	// 最小数量
+	IdMin int
+	// 最大数量
+	IdMax int
+	// 当前数量 总数
+	Num      int
 	LifeTime int64
 	Addr     string
 }
@@ -58,6 +62,7 @@ func (p *Pool) NewItem(addr string) *PoolItem {
 	item.IdMax = common.TcpPoolIdMax
 	item.LifeTime = common.TcpPoolLifeTime
 	item.Addr = addr
+	item.Objs = make(chan *PoolObj, common.TcpPoolIdMax)
 	item.Init()
 	p.Items[addr] = item
 	return item
@@ -65,15 +70,14 @@ func (p *Pool) NewItem(addr string) *PoolItem {
 
 // 连接池对象初始化
 func (item *PoolItem) Init() {
-	item.Lock()
-	defer item.Unlock()
-	for i := len(item.Objs); i < item.IdMin; i++ {
+	for i := 0; i < item.IdMin; i++ {
 		obj, err := item.NewObj()
 		if err != nil {
 			break
 		}
-		item.Objs = append(item.Objs, obj)
+		item.Objs <- obj
 	}
+	item.Num = item.IdMin
 }
 
 // 新建连接
@@ -91,37 +95,26 @@ func (item *PoolItem) NewObj() (*PoolObj, error) {
 	return obj, nil
 }
 
-// 获取连接
+// 获取连接：优先提供空闲，无空闲并且没有达到最大连接数则创建，否则等待最长时间后再获取
 func (item *PoolItem) Get() (*PoolObj, error) {
-	item.Lock()
-	defer item.Unlock()
-
-	// 不足max时，
-	if len(item.Objs) < item.IdMax {
-		return item.NewObj()
-	}
-
-	// 找到连接
-	index := -1
-	timeNow := time.Now().Unix()
-	for i := 0; i < len(item.Objs); i++ {
-		if item.Objs[i].EndTime > timeNow && item.Objs[i].Client.Status() {
-			index = i
-			break
+	// 无空闲、未达最大连接
+	if item.Num < item.IdMax {
+		obj, err := item.NewObj()
+		if err != nil {
+			return nil, err
 		}
+		item.Num++
+		return obj, nil
 	}
-	// 没有找到 执行初始化, 返回一个新创建的
-	if index == -1 || len(item.Objs)-index < item.IdMin {
-		item.Init()
-		return item.NewObj()
+	// 有空闲立即获取
+	// 无空闲、已达最大连接
+	t := time.NewTimer(time.Duration(common.TcpPoolMaxWaitTime) * time.Millisecond)
+	select {
+	case obj := <-item.Objs:
+		return obj, nil
+	case <-t.C:
+		return nil, fmt.Errorf("timeout")
 	}
-
-	obj := item.Objs[index]
-
-	// 清理一次
-	item.Objs = item.Objs[index+1:]
-
-	return obj, nil
 }
 
 // 回收连接
@@ -129,5 +122,5 @@ func (item *PoolItem) Recycle(obj *PoolObj) {
 	item.Lock()
 	defer item.Unlock()
 
-	item.Objs = append(item.Objs, obj)
+	item.Objs <- obj
 }
