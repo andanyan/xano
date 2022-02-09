@@ -1,6 +1,12 @@
 package logger
 
-import "os"
+import (
+	"fmt"
+	"os"
+	"runtime"
+	"strings"
+	"time"
+)
 
 // 支持级别
 // OFF、FATAL、ERROR、WARN、INFO、DEBUG、TRACE、 ALL
@@ -25,7 +31,7 @@ import "os"
 // 7 反白显示
 // 8 不可见
 
-// 日志颜色分类  绿色、蓝色、白色、黄色、红色、青蓝色
+// 日志颜色分类  绿色、蓝色、白色、黄色、红色、紫红色
 const (
 	LoggerLevelAll int = iota
 	LoggerLevelTrace
@@ -36,6 +42,39 @@ const (
 	LoggerLevelFatal
 	LoggerLevelOff
 )
+
+// 等级设置
+type LevelItem struct {
+	Color int
+	Desc  string
+}
+
+var levelConfig = map[int]*LevelItem{
+	LoggerLevelTrace: {
+		Color: 32,
+		Desc:  "TRACE",
+	},
+	LoggerLevelDebug: {
+		Color: 34,
+		Desc:  "DEBUG",
+	},
+	LoggerLevelInfo: {
+		Color: 37,
+		Desc:  "INFO",
+	},
+	LoggerLevelWarn: {
+		Color: 33,
+		Desc:  "WARN",
+	},
+	LoggerLevelError: {
+		Color: 31,
+		Desc:  "ERROR",
+	},
+	LoggerLevelFatal: {
+		Color: 35,
+		Desc:  "FATAL",
+	},
+}
 
 type Logger struct {
 	Output *os.File
@@ -62,7 +101,85 @@ func (l *Logger) SetOutput(output *os.File) {
 	}
 }
 
-// 强制退出
-func (*Logger) Fatal(v ...interface{}) {
+// 内容自适应
+func (l *Logger) write(level int, msg string) {
+	if l.Level > level {
+		return
+	}
+	levelItem := levelConfig[level]
 
+	timeDesc := time.Now().Format("2006-01-02:15:04:05.000000")
+
+	var fileDesc string
+	_, file, line, ok := runtime.Caller(2)
+	if ok {
+		fileIndex := strings.Index(file, "/src/")
+		if fileIndex >= 0 {
+			file = file[fileIndex+5:]
+			fileIndex := strings.Index(file, "/")
+			if fileIndex >= 0 {
+				file = file[fileIndex+1:]
+			}
+		}
+		fileDesc = fmt.Sprintf("%s:%d", file, line)
+	}
+
+	s := fmt.Sprintf("%c[0;40;%dm%s%c[0m [%s]: %s %s\n", 0x1B, levelItem.Color, levelItem.Desc, 0x1B, timeDesc, fileDesc, msg)
+	l.Output.WriteString(s)
+}
+
+// 追踪
+func (l *Logger) Trace(v ...interface{}) {
+	l.write(LoggerLevelTrace, fmt.Sprint(v...))
+}
+
+func (l *Logger) Tracef(format string, v ...interface{}) {
+	l.write(LoggerLevelTrace, fmt.Sprintf(format, v...))
+}
+
+// 调试
+func (l *Logger) Debug(v ...interface{}) {
+	l.write(LoggerLevelDebug, fmt.Sprint(v...))
+}
+
+func (l *Logger) Debugf(format string, v ...interface{}) {
+	l.write(LoggerLevelDebug, fmt.Sprintf(format, v...))
+}
+
+// 警告
+func (l *Logger) Info(v ...interface{}) {
+	l.write(LoggerLevelInfo, fmt.Sprint(v...))
+}
+
+func (l *Logger) Infof(format string, v ...interface{}) {
+	l.write(LoggerLevelInfo, fmt.Sprintf(format, v...))
+}
+
+// 警告
+func (l *Logger) Warn(v ...interface{}) {
+	l.write(LoggerLevelWarn, fmt.Sprint(v...))
+}
+
+func (l *Logger) Warnf(format string, v ...interface{}) {
+	l.write(LoggerLevelWarn, fmt.Sprintf(format, v...))
+}
+
+// 报错
+func (l *Logger) Error(v ...interface{}) {
+	l.write(LoggerLevelError, fmt.Sprint(v...))
+}
+
+func (l *Logger) Errorf(format string, v ...interface{}) {
+	l.write(LoggerLevelError, fmt.Sprintf(format, v...))
+}
+
+// 强制退出
+func (l *Logger) Fatal(v ...interface{}) {
+	l.write(LoggerLevelFatal, fmt.Sprint(v...))
+	os.Exit(1)
+}
+
+func (l *Logger) Fatalf(format string, v ...interface{}) {
+	l.write(LoggerLevelFatal, fmt.Sprintf(format, v...))
+	os.Exit(1)
 }

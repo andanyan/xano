@@ -25,4 +25,5 @@
 10、go标准库 https://studygolang.com/pkgdoc
 
 工作安排
-1、日志logger
+1、日志logger, 对接系统的日志
+2、启动接口
