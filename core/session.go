@@ -2,11 +2,11 @@ package core
 
 import (
 	"fmt"
-	"log"
 	"reflect"
 	"time"
 	"xlq-server/common"
 	"xlq-server/deal"
+	"xlq-server/logger"
 	"xlq-server/router"
 )
 
@@ -30,7 +30,7 @@ func GetSession(entity *TcpHandle) *Session {
 func (s *Session) Rpc(route string, input, output interface{}) error {
 	defer func() {
 		if err := recover(); err != nil {
-			fmt.Println(err)
+			logger.Error(err)
 		}
 	}()
 	if input == nil || output == nil {
@@ -72,7 +72,7 @@ func (s *Session) Rpc(route string, input, output interface{}) error {
 			}
 			err := common.MsgUnMarsh(common.TcpDealProtobuf, m.Data, output)
 			if err != nil {
-				log.Println(err)
+				logger.Error(err.Error())
 			}
 			c <- struct{}{}
 

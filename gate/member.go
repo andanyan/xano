@@ -1,11 +1,11 @@
 package gate
 
 import (
-	"log"
 	"time"
 	"xlq-server/common"
 	"xlq-server/core"
 	"xlq-server/deal"
+	"xlq-server/logger"
 	"xlq-server/router"
 )
 
@@ -32,7 +32,7 @@ func (m *Member) Run() {
 	go m.masterHandle()
 
 	// 启动服务
-	log.Printf("Gate Member Start: %s \n", addr)
+	logger.Infof("Gate Member Start: %s", addr)
 	core.NewTcpServer(addr, m.handle)
 }
 
@@ -41,14 +41,14 @@ func (m *Member) handle(h *core.TcpHandle, msg *deal.Msg) {
 	// 从连接池中拿到连接转发出去即可，拿到response之后释放连接
 	tcpAddr := router.GetGateInfo().GetNodeAddr(msg.Route, msg.Version)
 	if tcpAddr == "" {
-		log.Println("not found server:", msg.Version, msg.Route)
+		logger.Error("not found server:", msg.Version, msg.Route)
 		return
 	}
 
 	pool := core.GetPool(tcpAddr)
 	cli, err := pool.Get()
 	if err != nil {
-		log.Println(err)
+		logger.Error(err.Error())
 		return
 	}
 	defer pool.Recycle(cli)
@@ -72,13 +72,13 @@ func (m *Member) masterHandle() {
 
 	cli, err := core.NewTcpClient(gConf.MasterAddr)
 	if err != nil {
-		log.Println(err)
+		logger.Error(err.Error())
 		return
 	}
 	cli.SetHandle(func(h *core.TcpHandle, m *deal.Msg) {
 		ss := core.GetSession(h)
 		if err := ss.HandleRoute(router.MemberRouter, m); err != nil {
-			log.Println(err)
+			logger.Error(err.Error())
 		}
 	})
 
@@ -87,7 +87,7 @@ func (m *Member) masterHandle() {
 	}
 	inputBys, err := common.MsgMarsh(common.TcpDealProtobuf, input)
 	if err != nil {
-		log.Println(err)
+		logger.Error(err.Error())
 		return
 	}
 	msg := &deal.Msg{

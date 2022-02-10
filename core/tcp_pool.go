@@ -5,6 +5,7 @@ import (
 	"sync"
 	"time"
 	"xlq-server/common"
+	"xlq-server/logger"
 )
 
 type Pool struct {
@@ -84,7 +85,7 @@ func (item *PoolItem) Init() {
 func (item *PoolItem) NewObj() (*PoolObj, error) {
 	cli, err := NewTcpClient(item.Addr)
 	if err != nil {
-		fmt.Println(err)
+		logger.Error(err.Error())
 		return nil, err
 	}
 	timeNow := time.Now().Unix()

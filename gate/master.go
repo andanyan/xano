@@ -3,13 +3,13 @@ package gate
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"strings"
 	"time"
 	"xlq-server/common"
 	"xlq-server/core"
 	"xlq-server/deal"
+	"xlq-server/logger"
 	"xlq-server/router"
 )
 
@@ -38,7 +38,7 @@ func (m *Master) runTcp() {
 	})
 
 	// 启动服务
-	log.Printf("Gate Master Tcp Start: %s \n", gConf.TcpAddr)
+	logger.Infof("Gate Master Tcp Start: %s", gConf.TcpAddr)
 	core.NewTcpServer(gConf.TcpAddr, m.tcpHandle)
 }
 
@@ -46,7 +46,7 @@ func (m *Master) tcpHandle(h *core.TcpHandle, msg *deal.Msg) {
 	ss := core.GetSession(h)
 
 	if err := ss.HandleRoute(router.MasterRouter, msg); err != nil {
-		log.Println(err)
+		logger.Error(err.Error())
 	}
 }
 
@@ -62,10 +62,10 @@ func (m *Master) runHttp() {
 		Addr:    gConf.HttpAddr,
 		Handler: httpMux,
 	}
-	log.Printf("Gate Master Http Start: %s \n", gConf.HttpAddr)
+	logger.Infof("Gate Master Http Start: %s", gConf.HttpAddr)
 	err := httpServe.ListenAndServe()
 	if err != nil {
-		log.Panic(err)
+		logger.Fatal(err.Error())
 	}
 }
 

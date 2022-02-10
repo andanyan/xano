@@ -1,10 +1,10 @@
 package server
 
 import (
-	"log"
 	"xlq-server/common"
 	"xlq-server/core"
 	"xlq-server/deal"
+	"xlq-server/logger"
 	"xlq-server/router"
 )
 
@@ -21,7 +21,7 @@ func (s *Server) Run() {
 	if addr == "" {
 		return
 	}
-	log.Printf("Server Start: %s \n", addr)
+	logger.Infof("Server Start: %s", addr)
 	core.NewTcpServer(addr, s.handle)
 }
 
@@ -38,7 +38,7 @@ func (s *Server) handle(h *core.TcpHandle, msg *deal.Msg) {
 		ss := core.GetSession(h)
 		// 调用路由
 		if err = ss.HandleRoute(router.LocalRouter, msg); err != nil {
-			log.Println(err)
+			logger.Error(err.Error())
 		}
 
 	case common.MsgTypePush:

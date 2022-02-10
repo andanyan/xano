@@ -2,12 +2,12 @@ package core
 
 import (
 	"io"
-	"log"
 	"net"
 	"sync"
 	"sync/atomic"
 	"xlq-server/common"
 	"xlq-server/deal"
+	"xlq-server/logger"
 )
 
 type TcpHandleFunc func(h *TcpHandle, m *deal.Msg)
@@ -57,7 +57,7 @@ func (h *TcpHandle) Send(m *deal.Msg) {
 
 	msgBys, err := common.MsgMarsh(common.TcpDealProtobuf, m)
 	if err != nil {
-		log.Panicln(err)
+		logger.Error(err.Error())
 		return
 	}
 	p := &common.Packet{
@@ -122,7 +122,7 @@ func (h *TcpHandle) runRead() {
 			msg := new(deal.Msg)
 			err := common.MsgUnMarsh(common.TcpDealProtobuf, p.Data, msg)
 			if err != nil {
-				log.Println(err)
+				logger.Error(err.Error())
 				continue
 			}
 			// 消息id序号校验
@@ -145,7 +145,7 @@ func (h *TcpHandle) runSend() {
 		}
 		bys, err := common.PacketMarsh(packet)
 		if err != nil {
-			log.Println(err)
+			logger.Error(err.Error())
 			continue
 		}
 		h.conn.Write(bys)
@@ -164,11 +164,11 @@ func (h *TcpHandle) handleRead() {
 		if err != nil {
 			if err == io.EOF {
 				// 连接已断开
-				log.Println("tcp connection is disconnected")
+				logger.Warn("tcp connection is disconnected")
 				h.Close()
 				break
 			}
-			log.Println("tcp error: " + err.Error())
+			logger.Error(err.Error())
 			continue
 		}
 		if n <= 0 {

@@ -1,21 +1,21 @@
 package core
 
 import (
-	"log"
 	"net"
+	"xlq-server/logger"
 )
 
 func NewTcpServer(addr string, handleFunc TcpHandleFunc) {
 	l, err := net.Listen("tcp", addr)
 	if err != nil {
-		log.Fatal(err.Error())
+		logger.Fatal(err.Error())
 	}
 	defer l.Close()
 
 	for {
 		conn, err := l.Accept()
 		if err != nil {
-			log.Println(err.Error())
+			logger.Error(err.Error())
 			continue
 		}
 		h := NewTcpHandle(conn)

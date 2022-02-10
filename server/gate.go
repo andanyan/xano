@@ -1,11 +1,11 @@
 package server
 
 import (
-	"log"
 	"time"
 	"xlq-server/common"
 	"xlq-server/core"
 	"xlq-server/deal"
+	"xlq-server/logger"
 	"xlq-server/router"
 )
 
@@ -30,7 +30,7 @@ func (g *Gate) Run() {
 	}
 	t, err := core.NewTcpClient(g.Conf.GateAddr)
 	if err != nil {
-		log.Println(err)
+		logger.Error(err.Error())
 		return
 	}
 	// 不需要设置回包函数
@@ -51,7 +51,7 @@ func (g *Gate) Start() {
 		}
 		inputBys, err := common.MsgMarsh(common.TcpDealProtobuf, input)
 		if err != nil {
-			log.Println(err)
+			logger.Error(err.Error())
 			return
 		}
 		msg := &deal.Msg{
@@ -75,7 +75,7 @@ func (g *Gate) Close() {
 	input := &deal.ServerCloseNotice{}
 	inputBys, err := common.MsgMarsh(common.TcpDealProtobuf, input)
 	if err != nil {
-		log.Println(err)
+		logger.Error(err.Error())
 		return
 	}
 	msg := &deal.Msg{
