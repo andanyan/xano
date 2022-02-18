@@ -2,7 +2,7 @@ package core
 
 import (
 	"net"
-	"xlq-server/logger"
+	"xano/logger"
 )
 
 func NewTcpServer(addr string, handleFunc TcpHandleFunc) {

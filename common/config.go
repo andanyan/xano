@@ -1,14 +1,33 @@
 package common
 
+import (
+	"xano/logger"
+
+	"github.com/BurntSushi/toml"
+)
+
 var config *Config
 
 // 加载配置文件
-func SetConfig(conf *Config) {
-	config = conf
+func SetConfig(file string) {
+	if file == "" {
+		logger.Fatal("config is nil")
+	}
+	if config == nil {
+		config = new(Config)
+	}
+	_, err := toml.DecodeFile(file, config)
+	if err != nil {
+		logger.Fatal(err)
+	}
+	logger.Debug("Config:", config)
 }
 
 // 获取配置
 func GetConfig() *Config {
+	if config == nil {
+		logger.Fatal("config is nil")
+	}
 	return config
 }
 

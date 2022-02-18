@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"reflect"
 	"time"
-	"xlq-server/common"
-	"xlq-server/deal"
-	"xlq-server/logger"
-	"xlq-server/router"
+	"xano/common"
+	"xano/deal"
+	"xano/logger"
+	"xano/router"
 )
 
 type Session struct {

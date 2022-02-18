@@ -1,9 +1,9 @@
 package gate
 
 import (
-	"xlq-server/core"
-	"xlq-server/deal"
-	"xlq-server/router"
+	"xano/core"
+	"xano/deal"
+	"xano/router"
 )
 
 type MemberServer struct{}

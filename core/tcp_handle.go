@@ -5,9 +5,9 @@ import (
 	"net"
 	"sync"
 	"sync/atomic"
-	"xlq-server/common"
-	"xlq-server/deal"
-	"xlq-server/logger"
+	"xano/common"
+	"xano/deal"
+	"xano/logger"
 )
 
 type TcpHandleFunc func(h *TcpHandle, m *deal.Msg)
@@ -54,6 +54,8 @@ func (h *TcpHandle) Send(m *deal.Msg) {
 	if !h.status {
 		return
 	}
+
+	logger.Info("MsgOut:", m)
 
 	msgBys, err := common.MsgMarsh(common.TcpDealProtobuf, m)
 	if err != nil {
@@ -130,6 +132,7 @@ func (h *TcpHandle) runRead() {
 			if mmid != nil && mmid.(uint64) != msg.Mid-1 {
 				continue
 			}
+			logger.Info("MsgIn:", msg)
 			// 设置当前消息id
 			h.Set(common.HandleKeyMid, msg.Mid)
 			h.handleFunc(h, msg)

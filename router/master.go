@@ -3,7 +3,7 @@ package router
 import (
 	"sync"
 	"time"
-	"xlq-server/deal"
+	"xano/deal"
 )
 
 // 主节点路由

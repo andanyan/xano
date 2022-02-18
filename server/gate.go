@@ -2,11 +2,11 @@ package server
 
 import (
 	"time"
-	"xlq-server/common"
-	"xlq-server/core"
-	"xlq-server/deal"
-	"xlq-server/logger"
-	"xlq-server/router"
+	"xano/common"
+	"xano/core"
+	"xano/deal"
+	"xano/logger"
+	"xano/router"
 )
 
 // 与网关之间的通信

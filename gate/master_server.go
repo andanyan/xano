@@ -3,10 +3,10 @@ package gate
 import (
 	"fmt"
 	"time"
-	"xlq-server/common"
-	"xlq-server/core"
-	"xlq-server/deal"
-	"xlq-server/router"
+	"xano/common"
+	"xano/core"
+	"xano/deal"
+	"xano/router"
 )
 
 // 主节点的服务对象

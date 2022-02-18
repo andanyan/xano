@@ -1,11 +1,11 @@
 package server
 
 import (
-	"xlq-server/common"
-	"xlq-server/core"
-	"xlq-server/deal"
-	"xlq-server/logger"
-	"xlq-server/router"
+	"xano/common"
+	"xano/core"
+	"xano/deal"
+	"xano/logger"
+	"xano/router"
 )
 
 // 微服务对象,可独立运行tcp服务

@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"sync"
 	"time"
-	"xlq-server/common"
-	"xlq-server/logger"
+	"xano/common"
+	"xano/logger"
 )
 
 type Pool struct {

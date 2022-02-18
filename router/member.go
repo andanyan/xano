@@ -4,7 +4,7 @@ import (
 	"math/rand"
 	"sync"
 	"time"
-	"xlq-server/deal"
+	"xano/deal"
 )
 
 var MemberRouter = NewRouter()
