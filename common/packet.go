@@ -3,6 +3,7 @@ package common
 import (
 	"bytes"
 	"encoding/binary"
+	"xano/logger"
 )
 
 // tcp数据包结构
@@ -43,10 +44,14 @@ func PacketUnMarsh(bys []byte) (int, []*Packet) {
 		binary.Read(bytes.NewReader(bys[headStart:headEnd]), binary.LittleEndian, &p.Length)
 		dataStart := headEnd
 		dataEnd := dataStart + int(p.Length)
-		if dataEnd >= blen {
+		if dataEnd > blen {
 			break
 		}
-		binary.Read(bytes.NewReader(bys[dataStart:dataEnd]), binary.LittleEndian, &p.Data)
+		p.Data = make([]byte, p.Length)
+		err := binary.Read(bytes.NewReader(bys[dataStart:dataEnd]), binary.LittleEndian, &(p.Data))
+		if err != nil {
+			logger.Error(err)
+		}
 		packets = append(packets, p)
 		index = dataEnd
 	}

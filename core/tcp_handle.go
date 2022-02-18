@@ -1,7 +1,6 @@
 package core
 
 import (
-	"io"
 	"net"
 	"sync"
 	"sync/atomic"
@@ -31,8 +30,8 @@ func NewTcpHandle(conn net.Conn) *TcpHandle {
 		value:    make(map[string]interface{}),
 		status:   true,
 		conn:     conn,
-		sendChan: make(chan *common.Packet),
-		readChan: make(chan *common.Packet),
+		sendChan: make(chan *common.Packet, 100),
+		readChan: make(chan *common.Packet, 100),
 	}
 }
 
@@ -43,6 +42,9 @@ func (h *TcpHandle) SetHandle(handleFunc TcpHandleFunc) {
 
 // 处理关闭
 func (h *TcpHandle) Close() {
+	if !h.status {
+		return
+	}
 	h.status = false
 	close(h.readChan)
 	close(h.sendChan)
@@ -54,20 +56,16 @@ func (h *TcpHandle) Send(m *deal.Msg) {
 	if !h.status {
 		return
 	}
-
-	logger.Info("MsgOut:", m)
-
 	msgBys, err := common.MsgMarsh(common.TcpDealProtobuf, m)
 	if err != nil {
 		logger.Error(err.Error())
 		return
 	}
-	p := &common.Packet{
+	packet := &common.Packet{
 		Length: uint16(len(msgBys)),
 		Data:   msgBys,
 	}
-
-	h.sendChan <- p
+	h.sendChan <- packet
 }
 
 // 设置值
@@ -132,7 +130,6 @@ func (h *TcpHandle) runRead() {
 			if mmid != nil && mmid.(uint64) != msg.Mid-1 {
 				continue
 			}
-			logger.Info("MsgIn:", msg)
 			// 设置当前消息id
 			h.Set(common.HandleKeyMid, msg.Mid)
 			h.handleFunc(h, msg)
@@ -165,14 +162,9 @@ func (h *TcpHandle) handleRead() {
 	for {
 		n, err := h.conn.Read(buf)
 		if err != nil {
-			if err == io.EOF {
-				// 连接已断开
-				logger.Warn("tcp connection is disconnected")
-				h.Close()
-				break
-			}
 			logger.Error(err.Error())
-			continue
+			h.Close()
+			break
 		}
 		if n <= 0 {
 			continue
@@ -187,4 +179,5 @@ func (h *TcpHandle) handleRead() {
 			}
 		}
 	}
+
 }

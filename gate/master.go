@@ -32,7 +32,7 @@ func (m *Master) runTcp() {
 	}
 
 	// 注册主节点函数
-	router.MasterRouter.Register(&router.RouterServer{
+	router.GetMasterRouter().Register(&router.RouterServer{
 		Name:   "",
 		Server: new(MasterServer),
 	})
@@ -45,7 +45,7 @@ func (m *Master) runTcp() {
 func (m *Master) tcpHandle(h *core.TcpHandle, msg *deal.Msg) {
 	ss := core.GetSession(h)
 
-	if err := ss.HandleRoute(router.MasterRouter, msg); err != nil {
+	if err := ss.HandleRoute(router.GetMasterRouter(), msg); err != nil {
 		logger.Error(err.Error())
 	}
 }

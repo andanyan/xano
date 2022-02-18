@@ -129,7 +129,7 @@ func (s *Session) genMsg(route string, msgType uint32, input interface{}) (*deal
 		Deal:    common.TcpDealProtobuf,
 		Data:    inputBys,
 	}
-
+	logger.Infof("Route: %s, Mid: %d, MsgType: %d, deal: %d, date: [%+v]", msg.Route, msg.Mid, msg.MsgType, msg.Deal, input)
 	return msg, nil
 }
 
@@ -142,11 +142,14 @@ func (s *Session) HandleRoute(r *router.Router, m *deal.Msg) error {
 	}
 
 	// 解析输入
-	input := reflect.New(route.Input).Interface()
+	input := reflect.New(route.Input.Elem()).Interface()
 	err := common.MsgUnMarsh(m.Deal, m.Data, input)
 	if err != nil {
+		logger.Error(err)
 		return err
 	}
+
+	logger.Infof("Route: %s, Mid: %d, MsgType: %d, deal: %d, date: [%+v]", m.Route, m.Mid, m.MsgType, m.Deal, input)
 
 	// 调用函数
 	arg := []reflect.Value{reflect.ValueOf(s), reflect.ValueOf(input)}

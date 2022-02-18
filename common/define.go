@@ -17,11 +17,11 @@ const (
 // tcp请求信息
 const (
 	// 服务注册时差
-	TcpHeartDuration time.Duration = 60
+	TcpHeartDuration time.Duration = time.Duration(60) * time.Second
 	// TCP请求超时市场
-	TcpDeadDuration time.Duration = 60
+	TcpDeadDuration time.Duration = time.Duration(60) * time.Second
 	// HTTP请求超时时间
-	HttpDeadDuration time.Duration = 60
+	HttpDeadDuration time.Duration = time.Duration(60) * time.Second
 	// 连接池
 	TcpPoolIdMin int = 0
 	TcpPoolIdMax int = 10

@@ -2,6 +2,8 @@ package xano
 
 import (
 	"os"
+	"os/signal"
+	"syscall"
 	"xano/common"
 	"xano/gate"
 	"xano/logger"
@@ -22,6 +24,12 @@ func Run() {
 	// 启动服务层
 	serverServer := server.NewServer()
 	serverServer.Run()
+
+	// 信号监听处理
+	c := make(chan os.Signal)
+	signal.Notify(c, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGKILL)
+	s := <-c
+	logger.Info("退出信号: ", s)
 }
 
 // 设置配置
@@ -34,7 +42,7 @@ func WithRoute(obj *router.RouterServer) {
 	if obj == nil {
 		return
 	}
-	router.LocalRouter.Register(obj)
+	router.GetLocalRouter().Register(obj)
 }
 
 // 日志设定

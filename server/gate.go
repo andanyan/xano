@@ -37,13 +37,13 @@ func (g *Gate) Run() {
 	g.TcpClient = t
 
 	// 开启心跳
-	go g.Start()
+	//go g.Start()
 }
 
 // 发送同步路由包
 func (g *Gate) Start() {
 	for {
-		routes := router.LocalRouter.GetDescs()
+		routes := router.GetLocalRouter().GetDescs()
 		input := &deal.ServerStartNotice{
 			Version: common.GetConfig().Base.Version,
 			Port:    g.Conf.Port,

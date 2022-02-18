@@ -1,11 +1,12 @@
 package router
 
 import (
-	"log"
 	"reflect"
+	"xano/logger"
 )
 
 type Router struct {
+	Name string
 	// route -> func
 	Data map[string]*RouterItem
 	// []route
@@ -34,7 +35,7 @@ func (r *Router) Register(obj *RouterServer) {
 
 	defer func() {
 		if err := recover(); err != nil {
-			log.Printf("error type func %s.%s: %s\n", vName, mName, err)
+			logger.Errorf("error type func %s.%s: %s\n", vName, mName, err)
 		}
 	}()
 

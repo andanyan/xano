@@ -18,11 +18,11 @@ func NewServer() *Server {
 func (s *Server) Run() {
 	sConf := common.GetConfig().Server
 	addr := common.GenAddr(sConf.Host, sConf.Port)
+	logger.Infof("Server Start: %s", addr)
 	if addr == "" {
 		return
 	}
-	logger.Infof("Server Start: %s", addr)
-	core.NewTcpServer(addr, s.handle)
+	go core.NewTcpServer(addr, s.handle)
 }
 
 func (s *Server) handle(h *core.TcpHandle, msg *deal.Msg) {
@@ -37,7 +37,7 @@ func (s *Server) handle(h *core.TcpHandle, msg *deal.Msg) {
 		// 创建session 提供给接口端使用
 		ss := core.GetSession(h)
 		// 调用路由
-		if err = ss.HandleRoute(router.LocalRouter, msg); err != nil {
+		if err = ss.HandleRoute(router.GetLocalRouter(), msg); err != nil {
 			logger.Error(err.Error())
 		}
 

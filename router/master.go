@@ -7,7 +7,15 @@ import (
 )
 
 // 主节点路由
-var MasterRouter = new(Router)
+var masterRouter *Router
+
+func GetMasterRouter() *Router {
+	if masterRouter == nil {
+		masterRouter = NewRouter()
+		masterRouter.Name = "Master"
+	}
+	return masterRouter
+}
 
 // 全节点路由信息记录
 type MasterNode struct {

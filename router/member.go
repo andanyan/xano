@@ -7,7 +7,15 @@ import (
 	"xano/deal"
 )
 
-var MemberRouter = NewRouter()
+var memberRouter *Router
+
+func GetMemberRouter() *Router {
+	if memberRouter == nil {
+		memberRouter = NewRouter()
+		memberRouter.Name = "Member"
+	}
+	return memberRouter
+}
 
 // 普通网关节点
 // 主要实现地址寻址

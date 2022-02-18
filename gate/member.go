@@ -23,25 +23,26 @@ func (m *Member) Run() {
 	}
 
 	// 注册回包服务
-	router.MasterRouter.Register(&router.RouterServer{
+	router.GetMemberRouter().Register(&router.RouterServer{
 		Name:   "",
 		Server: new(MemberServer),
 	})
 
 	// 处理与主节点的通信
-	go m.masterHandle()
+	//go m.masterHandle()
 
 	// 启动服务
 	logger.Infof("Gate Member Start: %s", addr)
-	core.NewTcpServer(addr, m.handle)
+	go core.NewTcpServer(addr, m.handle)
 }
 
 // 转发逻辑
 func (m *Member) handle(h *core.TcpHandle, msg *deal.Msg) {
 	// 从连接池中拿到连接转发出去即可，拿到response之后释放连接
-	tcpAddr := router.GetGateInfo().GetNodeAddr(msg.Route, msg.Version)
+	tcpAddr := "0.0.0.0:7000"
+	//tcpAddr := router.GetGateInfo().GetNodeAddr(msg.Route, msg.Version)
 	if tcpAddr == "" {
-		logger.Error("not found server:", msg.Version, msg.Route)
+		logger.Errorf("not found server: %s#%s", msg.Version, msg.Route)
 		return
 	}
 
@@ -52,14 +53,22 @@ func (m *Member) handle(h *core.TcpHandle, msg *deal.Msg) {
 		return
 	}
 	defer pool.Recycle(cli)
+
+	curMid := msg.Mid
+
 	c := make(chan struct{})
-	cli.Client.SetHandle(func(ch *core.TcpHandle, cm *deal.Msg) {
-		ch.Send(cm)
-		if cm.MsgType != common.MsgTypeResponse {
+	cli.Client.SetHandle(func(_ *core.TcpHandle, rm *deal.Msg) {
+		rm.Mid = curMid
+		h.Send(rm)
+		if rm.MsgType != common.MsgTypeResponse {
 			c <- struct{}{}
 		}
 	})
-	defer cli.Client.SetHandle(nil)
+	//defer cli.Client.SetHandle(nil)
+
+	// 发送消息
+	msg.Mid = cli.Client.GetMid()
+	cli.Client.Send(msg)
 	<-c
 }
 
@@ -77,7 +86,7 @@ func (m *Member) masterHandle() {
 	}
 	cli.SetHandle(func(h *core.TcpHandle, m *deal.Msg) {
 		ss := core.GetSession(h)
-		if err := ss.HandleRoute(router.MemberRouter, m); err != nil {
+		if err := ss.HandleRoute(router.GetMemberRouter(), m); err != nil {
 			logger.Error(err.Error())
 		}
 	})
@@ -87,20 +96,19 @@ func (m *Member) masterHandle() {
 	}
 	inputBys, err := common.MsgMarsh(common.TcpDealProtobuf, input)
 	if err != nil {
-		logger.Error(err.Error())
 		return
-	}
-	msg := &deal.Msg{
-		Route:   "AllNode",
-		Mid:     cli.GetMid(),
-		MsgType: common.MsgTypeRequest,
-		Deal:    common.TcpDealProtobuf,
-		Data:    inputBys,
-		Version: "",
 	}
 
 	// 定时获取网关接口
 	for {
+		msg := &deal.Msg{
+			Route:   "AllNode",
+			Mid:     cli.GetMid(),
+			MsgType: common.MsgTypeRequest,
+			Deal:    common.TcpDealProtobuf,
+			Data:    inputBys,
+			Version: common.GetConfig().Base.Version,
+		}
 		cli.Send(msg)
 		time.Sleep(common.TcpHeartDuration)
 	}

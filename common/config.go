@@ -20,7 +20,7 @@ func SetConfig(file string) {
 	if err != nil {
 		logger.Fatal(err)
 	}
-	logger.Debug("Config:", config)
+	logger.Debugf("Config: %+v", config)
 }
 
 // 获取配置
