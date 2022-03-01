@@ -15,6 +15,10 @@ func NewServer() *Server {
 	return new(Server)
 }
 
+func (s *Server) Close() {
+
+}
+
 func (s *Server) Run() {
 	sConf := common.GetConfig().Server
 	addr := common.GenAddr(sConf.Host, sConf.Port)
@@ -31,9 +35,6 @@ func (s *Server) handle(h *core.TcpHandle, msg *deal.Msg) {
 
 	switch msg.MsgType {
 	case common.MsgTypeNotice, common.MsgTypeRequest, common.MsgTypeRpc:
-		// 设定当前的来源地址
-		h.Set(common.HandleKeyTcpAddr, h.GetAddr())
-
 		// 创建session 提供给接口端使用
 		ss := core.GetSession(h)
 		// 调用路由

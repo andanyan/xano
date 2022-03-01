@@ -44,10 +44,7 @@ func (s *Session) Rpc(route string, input, output interface{}) error {
 	}
 
 	// 向网关主节点发送Rpc请求
-	tcpAddr := s.Get(common.HandleKeyTcpAddr).(string)
-	if tcpAddr == "" {
-		return fmt.Errorf("has no server: %s", route)
-	}
+	tcpAddr := "0.0.0.0:12000"
 
 	// 获取连接
 	pool := GetPool(tcpAddr)
@@ -127,6 +124,7 @@ func (s *Session) genMsg(route string, msgType uint32, input interface{}) (*deal
 		Mid:     s.Get(common.HandleKeyMid).(uint64),
 		MsgType: msgType,
 		Deal:    common.TcpDealProtobuf,
+		Version: common.GetConfig().Base.Version,
 		Data:    inputBys,
 	}
 	logger.Infof("Route: %s, Mid: %d, MsgType: %d, deal: %d, date: [%+v]", msg.Route, msg.Mid, msg.MsgType, msg.Deal, input)

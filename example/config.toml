@@ -1,0 +1,16 @@
+[base]
+version = "1.0.0"
+
+[server]
+host = ""
+port = "10000"
+gateAddr = ":11000"
+
+[gateMaster]
+tcpAddr = ":11000"
+httpAddr = ":10001"
+
+[gateMember]
+host = ""
+port = "12000"
+masterAddr = ":11000"

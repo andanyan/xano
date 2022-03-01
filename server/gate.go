@@ -12,8 +12,8 @@ import (
 // 与网关之间的通信
 type Gate struct {
 	*core.TcpClient
-	IsClose bool
-	Conf    common.ServerConfig
+	// 配置加载到缓存
+	Conf common.ServerConfig
 }
 
 func NewGate() *Gate {
@@ -37,7 +37,7 @@ func (g *Gate) Run() {
 	g.TcpClient = t
 
 	// 开启心跳
-	//go g.Start()
+	go g.Start()
 }
 
 // 发送同步路由包
@@ -69,8 +69,9 @@ func (g *Gate) Start() {
 
 // 停止运行
 func (g *Gate) Close() {
-	g.IsClose = true
-
+	if g.Conf.GateAddr == "" {
+		return
+	}
 	// 发送服务断开包
 	input := &deal.ServerCloseNotice{}
 	inputBys, err := common.MsgMarsh(common.TcpDealProtobuf, input)

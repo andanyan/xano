@@ -4,6 +4,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 	"xano/common"
 	"xano/gate"
 	"xano/logger"
@@ -29,7 +30,19 @@ func Run() {
 	c := make(chan os.Signal)
 	signal.Notify(c, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGKILL)
 	s := <-c
-	logger.Info("退出信号: ", s)
+	logger.Info("Receive exit signal: ", s)
+	logger.Info("Stoping...")
+
+	// 关闭节点
+	go func() {
+		serverServer.Close()
+		serverGate.Close()
+		gateMember.Close()
+		gateMaster.Close()
+	}()
+
+	time.Sleep(3 * time.Second)
+	logger.Info("Stoped")
 }
 
 // 设置配置

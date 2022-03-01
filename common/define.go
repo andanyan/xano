@@ -16,6 +16,8 @@ const (
 
 // tcp请求信息
 const (
+	// 延迟时间
+	DelayDuration time.Duration = time.Second
 	// 服务注册时差
 	TcpHeartDuration time.Duration = time.Duration(60) * time.Second
 	// TCP请求超时市场

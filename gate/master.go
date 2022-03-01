@@ -25,6 +25,10 @@ func (m *Master) Run() {
 	go m.runHttp()
 }
 
+func (m *Master) Close() {
+
+}
+
 func (m *Master) runTcp() {
 	gConf := common.GetConfig().GateMaster
 	if gConf.TcpAddr == "" {
