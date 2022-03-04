@@ -9,19 +9,21 @@ import (
 	"xano/router"
 )
 
-type Member struct{}
+type Member struct {
+	MasterClient *core.TcpClient
+}
 
 func NewMember() *Member {
 	return new(Member)
 }
 
 func (m *Member) Close() {
-	return
+	m.memberClose()
 }
 
 func (m *Member) Run() {
 	gConf := common.GetConfig().GateMember
-	addr := gConf.Host + ":" + gConf.Port
+	addr := common.GenAddr(gConf.Host, gConf.Port)
 	if addr == "" {
 		return
 	}
@@ -43,7 +45,8 @@ func (m *Member) Run() {
 // 转发逻辑
 func (m *Member) handle(h *core.TcpHandle, msg *deal.Msg) {
 	// 从连接池中拿到连接转发出去即可，拿到response之后释放连接
-	tcpAddr := router.GetGateInfo().GetNodeAddr(msg.Route, msg.Version)
+	router := router.GetGateInfo()
+	tcpAddr := router.GetNodeRand(msg.Route)
 	if tcpAddr == "" {
 		logger.Errorf("not found server: %s#%s", msg.Version, msg.Route)
 		return
@@ -82,38 +85,90 @@ func (m *Member) masterHandle() {
 		return
 	}
 
+	// 与主节点建立连接
 	cli, err := core.NewTcpClient(gConf.MasterAddr)
 	if err != nil {
-		logger.Error(err.Error())
+		logger.Fatal(err)
 		return
 	}
+	defer cli.Close()
 	cli.SetHandle(func(h *core.TcpHandle, m *deal.Msg) {
 		ss := core.GetSession(h)
 		if err := ss.HandleRoute(router.GetMemberRouter(), m); err != nil {
 			logger.Error(err.Error())
 		}
 	})
+	m.MasterClient = cli
 
-	input := &deal.AllNodeRequest{
+	// 发起Start通信
+	m.memberStart()
+
+	// 启动心跳
+	for {
+		time.Sleep(common.TcpHeartDuration)
+		m.memberHeart()
+	}
+}
+
+// notice master member start
+func (m *Member) memberStart() {
+	input := &deal.MemberStartNotice{
 		Version: common.GetConfig().Base.Version,
+		Port:    common.GetConfig().GateMember.Port,
 	}
 	inputBys, err := common.MsgMarsh(common.TcpDealProtobuf, input)
 	if err != nil {
+		logger.Error(err)
 		return
 	}
-
-	// 定时获取网关接口
-	time.Sleep(common.DelayDuration)
-	for {
-		msg := &deal.Msg{
-			Route:   "AllNode",
-			Mid:     cli.GetMid(),
-			MsgType: common.MsgTypeRequest,
-			Deal:    common.TcpDealProtobuf,
-			Data:    inputBys,
-			Version: common.GetConfig().Base.Version,
-		}
-		cli.Send(msg)
-		time.Sleep(common.TcpHeartDuration)
+	msg := &deal.Msg{
+		Route:   "MemberStart",
+		Mid:     m.MasterClient.GetMid(),
+		MsgType: common.MsgTypeNotice,
+		Deal:    common.TcpDealProtobuf,
+		Data:    inputBys,
+		Version: common.GetConfig().Base.Version,
 	}
+	m.MasterClient.Send(msg)
+}
+
+// notice master member close
+func (m *Member) memberClose() {
+	if m.MasterClient == nil {
+		return
+	}
+	input := &deal.MemberStopNotice{}
+	inputBys, err := common.MsgMarsh(common.TcpDealProtobuf, input)
+	if err != nil {
+		logger.Error(err)
+		return
+	}
+	msg := &deal.Msg{
+		Route:   "MemberStop",
+		Mid:     m.MasterClient.GetMid(),
+		MsgType: common.MsgTypeNotice,
+		Deal:    common.TcpDealProtobuf,
+		Data:    inputBys,
+		Version: common.GetConfig().Base.Version,
+	}
+	m.MasterClient.Send(msg)
+}
+
+// heart master
+func (m *Member) memberHeart() {
+	input := &deal.Ping{}
+	inputBys, err := common.MsgMarsh(common.TcpDealProtobuf, input)
+	if err != nil {
+		logger.Error(err)
+		return
+	}
+	msg := &deal.Msg{
+		Route:   "MemberHeart",
+		Mid:     m.MasterClient.GetMid(),
+		MsgType: common.MsgTypeRequest,
+		Deal:    common.TcpDealProtobuf,
+		Data:    inputBys,
+		Version: common.GetConfig().Base.Version,
+	}
+	m.MasterClient.Send(msg)
 }

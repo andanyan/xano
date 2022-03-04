@@ -61,6 +61,11 @@ func (r *Router) Register(obj *RouterServer) {
 			panic("duplicate route names")
 		}
 
+		inLen := method.Type().NumIn()
+		if inLen < 2 {
+			return
+		}
+
 		r.Data[rName] = &RouterItem{
 			Method: method,
 			Input:  method.Type().In(1),

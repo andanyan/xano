@@ -2,7 +2,6 @@ package router
 
 import (
 	"sync"
-	"time"
 	"xano/deal"
 )
 
@@ -21,8 +20,11 @@ func GetMasterRouter() *Router {
 type MasterNode struct {
 	sync.RWMutex
 
-	// addr -> MasterNodeItem
-	Data map[string]*deal.NodeItem
+	// 从节点
+	MemberNode []*deal.MemberNode
+
+	//服务节点
+	ServerNode []*deal.ServerNode
 }
 
 var masterNode *MasterNode
@@ -30,50 +32,72 @@ var masterNode *MasterNode
 func GetMasterNode() *MasterNode {
 	if masterNode == nil {
 		masterNode = new(MasterNode)
-		masterNode.Data = make(map[string]*deal.NodeItem)
 	}
 	return masterNode
 }
 
-// 增加节点
-func (m *MasterNode) AddNode(addr, version string, routes []string) bool {
+// 获取所有从节点
+func (m *MasterNode) AllMemberNode() []*deal.MemberNode {
+	return m.MemberNode
+}
+
+// 增加从节点
+func (m *MasterNode) AddMemberNode(node *deal.MemberNode) {
 	m.Lock()
 	defer m.Unlock()
-
-	if m.Data[addr] != nil {
-		m.Data[addr].LastTime = time.Now().Unix()
-		return false
+	// 判断是否已存在从节点
+	for key, item := range m.MemberNode {
+		if item.Addr == node.Addr {
+			m.MemberNode[key] = node
+			return
+		}
 	}
+	m.MemberNode = append(m.MemberNode, node)
+}
 
-	m.Data[addr] = &deal.NodeItem{
-		LastTime: time.Now().Unix(),
-		Status:   true,
-		Version:  version,
-		Addr:     addr,
-		Routes:   routes,
+// 移除从节点
+func (m *MasterNode) RemoveMemberNode(addr string) {
+	m.Lock()
+	defer m.Unlock()
+	index := 0
+	for _, item := range m.MemberNode {
+		if item.Addr != addr {
+			m.MemberNode[index] = item
+			index++
+		}
 	}
-	return true
+	m.MemberNode = m.MemberNode[:index]
+}
+
+// 获取所有的服务节点
+func (m *MasterNode) AllServerNode() []*deal.ServerNode {
+	return m.ServerNode
+}
+
+// 服务节点增加
+func (m *MasterNode) AddServerNode(node *deal.ServerNode) {
+	m.Lock()
+	defer m.Unlock()
+	// 判断是否已存在从节点
+	for key, item := range m.ServerNode {
+		if item.Addr == node.Addr {
+			m.ServerNode[key] = node
+			return
+		}
+	}
+	m.ServerNode = append(m.ServerNode, node)
 }
 
 // 节点关闭
-func (m *MasterNode) RemoveNode(addr string) {
+func (m *MasterNode) RemoveServerNode(addr string) {
 	m.Lock()
 	defer m.Unlock()
-
-	if m.Data[addr] != nil {
-		return
+	index := 0
+	for _, item := range m.ServerNode {
+		if item.Addr != addr {
+			m.ServerNode[index] = item
+			index++
+		}
 	}
-
-	m.Data[addr].Status = false
-}
-
-// 获取全部节点
-func (m *MasterNode) GetAllNode() []*deal.NodeItem {
-	m.RLock()
-	defer m.RUnlock()
-	res := make([]*deal.NodeItem, 0)
-	for _, node := range m.Data {
-		res = append(res, node)
-	}
-	return res
+	m.ServerNode = m.ServerNode[:index]
 }

@@ -21,7 +21,7 @@ func Run() {
 	gateMember.Run()
 	// 启动网关层客户端
 	serverGate := server.NewGate()
-	serverGate.Run()
+	go serverGate.Run()
 	// 启动服务层
 	serverServer := server.NewServer()
 	serverServer.Run()

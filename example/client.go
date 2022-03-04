@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-	xano.WithConfig("./config.toml")
+	xano.WithConfig("./config/master.toml")
 
 	pool := core.GetPool("0.0.0.0:12000")
 	cli, err := pool.Get()
@@ -49,7 +49,7 @@ func main() {
 		}
 		cli.Client.Send(inputMsg)
 		i++
-		time.Sleep(time.Second)
+		time.Sleep(1000 * time.Millisecond)
 	}
 
 	c := make(chan struct{})

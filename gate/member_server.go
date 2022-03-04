@@ -8,8 +8,13 @@ import (
 
 type MemberServer struct{}
 
-// 收到路由回包
-func (s *MemberServer) AllNode(ss *core.Session, input *deal.AllNodeResponse) error {
-	router.GetGateInfo().SetData(input.Nodes)
+// 心跳返回
+func (m *MemberServer) MemberHeart(ss *core.Session, input *deal.Pong) error {
+	return nil
+}
+
+// 节点推送
+func (m *MemberServer) ServerNode(ss *core.Session, input *deal.ServerNodePush) error {
+	router.GetGateInfo().SetNode(input.Nodes)
 	return nil
 }

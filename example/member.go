@@ -4,23 +4,25 @@ import (
 	"xano"
 	"xano/core"
 	"xano/example/pb"
-	"xano/logger"
 	"xano/router"
 )
 
 type B struct{}
 
 func (b *B) Div(s *core.Session, input *pb.DivRequest) error {
-	addRes := new(pb.AddResponse)
-	err := s.Rpc("Add", &pb.AddRequest{
-		Args: []int64{input.A, input.B},
-	}, addRes)
-	if err != nil {
-		logger.Error(err)
-		return err
-	}
+	/*
+		addRes := new(pb.AddResponse)
+		err := s.Rpc("Add", &pb.AddRequest{
+			Args: []int64{input.A, input.B},
+		}, addRes)
+		if err != nil {
+			logger.Error(err)
+			return err
+		}
 
-	res := addRes.Result * (input.B - input.A)
+		res := addRes.Result * (input.A - input.B)
+	*/
+	res := (input.B - input.A) * (input.A + input.B)
 
 	return s.Response("Div", &pb.DivResponse{
 		Result: res,
@@ -28,7 +30,7 @@ func (b *B) Div(s *core.Session, input *pb.DivRequest) error {
 }
 
 func main() {
-	xano.WithConfig("./config/server.toml")
+	xano.WithConfig("./config/member.toml")
 
 	xano.WithRoute(&router.RouterServer{
 		Name:   "",

@@ -22,10 +22,10 @@ func (s *Server) Close() {
 func (s *Server) Run() {
 	sConf := common.GetConfig().Server
 	addr := common.GenAddr(sConf.Host, sConf.Port)
-	logger.Infof("Server Start: %s", addr)
 	if addr == "" {
 		return
 	}
+	logger.Infof("Server Start: %s", addr)
 	go core.NewTcpServer(addr, s.handle)
 }
 

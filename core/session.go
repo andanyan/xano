@@ -44,7 +44,10 @@ func (s *Session) Rpc(route string, input, output interface{}) error {
 	}
 
 	// 向网关主节点发送Rpc请求
-	tcpAddr := "0.0.0.0:12000"
+	tcpAddr := router.GetMemberInfo().GetNodeRand()
+	if tcpAddr == "" {
+		return fmt.Errorf("has no member node valid")
+	}
 
 	// 获取连接
 	pool := GetPool(tcpAddr)
@@ -54,30 +57,24 @@ func (s *Session) Rpc(route string, input, output interface{}) error {
 	}
 	defer pool.Recycle(poolObj)
 
-	// 发送包
-	poolObj.Client.Send(msg)
-
 	// 收到Response包才认为已完成、其他包直接发射回去即可
 	c := make(chan struct{})
 	poolObj.Client.SetHandle(func(h *TcpHandle, m *deal.Msg) {
-		mmid := s.Get(common.HandleKeyMid).(uint64)
-		if m.Mid == mmid {
-			// 非Response的类型，直接返回给客户端
-			if m.MsgType != common.MsgTypeResponse {
-				s.Send(m)
-				return
-			}
-			err := common.MsgUnMarsh(common.TcpDealProtobuf, m.Data, output)
-			if err != nil {
-				logger.Error(err.Error())
-			}
-			c <- struct{}{}
-
-		} else if m.Mid > mmid {
-			c <- struct{}{}
+		// 非Response的类型，直接返回给客户端
+		if m.MsgType != common.MsgTypeResponse {
+			s.Send(m)
+			return
 		}
+		err := common.MsgUnMarsh(common.TcpDealProtobuf, m.Data, output)
+		if err != nil {
+			logger.Error(err.Error())
+		}
+		c <- struct{}{}
 	})
 	defer poolObj.Client.SetHandle(nil)
+
+	// 发送包
+	poolObj.Client.Send(msg)
 
 	t := time.NewTimer(common.TcpDeadDuration)
 
@@ -121,13 +118,13 @@ func (s *Session) genMsg(route string, msgType uint32, input interface{}) (*deal
 	}
 	msg := &deal.Msg{
 		Route:   route,
-		Mid:     s.Get(common.HandleKeyMid).(uint64),
+		Mid:     s.GetMid(),
 		MsgType: msgType,
 		Deal:    common.TcpDealProtobuf,
 		Version: common.GetConfig().Base.Version,
 		Data:    inputBys,
 	}
-	logger.Infof("Route: %s, Mid: %d, MsgType: %d, deal: %d, date: [%+v]", msg.Route, msg.Mid, msg.MsgType, msg.Deal, input)
+	logger.Infof("Route: %s, Mid: %d, MsgType: %d, deal: %d, data: [%+v]", msg.Route, msg.Mid, msg.MsgType, msg.Deal, input)
 	return msg, nil
 }
 
@@ -147,7 +144,7 @@ func (s *Session) HandleRoute(r *router.Router, m *deal.Msg) error {
 		return err
 	}
 
-	logger.Infof("Route: %s, Mid: %d, MsgType: %d, deal: %d, date: [%+v]", m.Route, m.Mid, m.MsgType, m.Deal, input)
+	logger.Infof("Route: %s, Mid: %d, MsgType: %d, deal: %d, data: [%+v]", m.Route, m.Mid, m.MsgType, m.Deal, input)
 
 	// 调用函数
 	arg := []reflect.Value{reflect.ValueOf(s), reflect.ValueOf(input)}

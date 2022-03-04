@@ -12,6 +12,9 @@ type Addr struct {
 
 // 组装地址
 func GenAddr(host, port string) string {
+	if host == "" && port == "" {
+		return ""
+	}
 	return host + ":" + port
 }
 

@@ -3,6 +3,7 @@ package core
 import (
 	"fmt"
 	"sync"
+	"sync/atomic"
 	"time"
 	"xano/common"
 	"xano/logger"
@@ -23,7 +24,7 @@ type PoolItem struct {
 	// 最大数量
 	IdMax int
 	// 当前数量 总数
-	Num      int
+	Num      int32
 	LifeTime int64
 	Addr     string
 }
@@ -78,7 +79,7 @@ func (item *PoolItem) Init() {
 		}
 		item.Objs <- obj
 	}
-	item.Num = item.IdMin
+	item.Num = int32(item.IdMin)
 }
 
 // 新建连接
@@ -99,22 +100,36 @@ func (item *PoolItem) NewObj() (*PoolObj, error) {
 // 获取连接：优先提供空闲，无空闲并且没有达到最大连接数则创建，否则等待最长时间后再获取
 func (item *PoolItem) Get() (*PoolObj, error) {
 	// 无空闲、未达最大连接
-	if item.Num < item.IdMax {
+	if int(item.Num) < item.IdMax {
 		obj, err := item.NewObj()
 		if err != nil {
 			return nil, err
 		}
-		item.Num++
+		atomic.AddInt32(&item.Num, 1)
 		return obj, nil
 	}
 	// 有空闲立即获取
 	// 无空闲、已达最大连接
 	t := time.NewTimer(time.Duration(common.TcpPoolMaxWaitTime) * time.Millisecond)
-	select {
-	case obj := <-item.Objs:
-		return obj, nil
-	case <-t.C:
-		return nil, fmt.Errorf("timeout")
+	for {
+		select {
+		case obj := <-item.Objs:
+			if obj.Client.Status() {
+				return obj, nil
+			}
+			atomic.AddInt32(&item.Num, -1)
+			// 如果数量多少, 则生成新的
+			if int(item.Num) < item.IdMax {
+				obj, err := item.NewObj()
+				if err != nil {
+					return nil, err
+				}
+				atomic.AddInt32(&item.Num, 1)
+				return obj, nil
+			}
+		case <-t.C:
+			return nil, fmt.Errorf("timeout")
+		}
 	}
 }
 
@@ -122,6 +137,5 @@ func (item *PoolItem) Get() (*PoolObj, error) {
 func (item *PoolItem) Recycle(obj *PoolObj) {
 	item.Lock()
 	defer item.Unlock()
-
 	item.Objs <- obj
 }

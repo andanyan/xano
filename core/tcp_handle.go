@@ -54,6 +54,7 @@ func (h *TcpHandle) Close() {
 // 包入列
 func (h *TcpHandle) Send(m *deal.Msg) {
 	if !h.status {
+		logger.Error("TCP IS DISCONNECT")
 		return
 	}
 	msgBys, err := common.MsgMarsh(common.TcpDealProtobuf, m)
@@ -127,9 +128,15 @@ func (h *TcpHandle) runRead() {
 			}
 			// 消息id序号校验
 			mmid := h.Get(common.HandleKeyMid)
-			if mmid != nil && mmid.(uint64) != msg.Mid-1 {
-				continue
+
+			// mmid拦截
+			if mmid != nil {
+				nmmid := mmid.(uint64)
+				if nmmid != msg.Mid && nmmid != msg.Mid-1 {
+					logger.Error("Fatal MsgId: ", nmmid, msg.Mid)
+				}
 			}
+
 			// 设置当前消息id
 			h.Set(common.HandleKeyMid, msg.Mid)
 			h.handleFunc(h, msg)
@@ -162,7 +169,7 @@ func (h *TcpHandle) handleRead() {
 	for {
 		n, err := h.conn.Read(buf)
 		if err != nil {
-			logger.Error(err.Error())
+			logger.Debug(err)
 			h.Close()
 			break
 		}

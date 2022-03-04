@@ -52,7 +52,7 @@ type ServerConfig struct {
 	Port string
 
 	// 通信的网关地址
-	GateAddr string
+	MasterAddr string
 }
 
 type GateMaster struct {

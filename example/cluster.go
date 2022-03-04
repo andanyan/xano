@@ -8,6 +8,18 @@ import (
 	"xano/router"
 )
 
+type A struct{}
+
+func (a *A) Add(s *core.Session, input *pb.AddRequest) error {
+	var res int64
+	for _, val := range input.Args {
+		res += val
+	}
+	return s.Response("Add", &pb.AddResponse{
+		Result: res,
+	})
+}
+
 type B struct{}
 
 func (b *B) Div(s *core.Session, input *pb.DivRequest) error {
@@ -20,7 +32,7 @@ func (b *B) Div(s *core.Session, input *pb.DivRequest) error {
 		return err
 	}
 
-	res := addRes.Result * (input.A - input.B)
+	res := addRes.Result * (input.B - input.A)
 
 	return s.Response("Div", &pb.DivResponse{
 		Result: res,
@@ -28,8 +40,12 @@ func (b *B) Div(s *core.Session, input *pb.DivRequest) error {
 }
 
 func main() {
-	xano.WithConfig("./config_rpc.toml")
+	xano.WithConfig("./config/cluster.toml")
 
+	xano.WithRoute(&router.RouterServer{
+		Name:   "",
+		Server: new(A),
+	})
 	xano.WithRoute(&router.RouterServer{
 		Name:   "",
 		Server: new(B),

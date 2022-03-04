@@ -54,5 +54,6 @@ const (
 const (
 	HandleKeySession string = "Session"
 	HandleKeyMid     string = "Mid"
-	HandleKeyTcpAddr string = "TcpAddr"
+	MemberNode       string = "MemberNode"
+	ServerNode       string = "ServerNode"
 )
