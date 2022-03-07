@@ -6,25 +6,21 @@ import (
 	"syscall"
 	"time"
 	"xano/common"
-	"xano/gate"
 	"xano/logger"
 	"xano/router"
 	"xano/server"
 )
 
 func Run() {
-	// 启动网关主节点
-	gateMaster := gate.NewMaster()
-	gateMaster.Run()
+	// 启动master
+	master := server.NewMaster()
+	master.Run()
 	// 启动member
-	gateMember := gate.NewMember()
-	gateMember.Run()
-	// 启动网关层客户端
-	serverGate := server.NewGate()
-	go serverGate.Run()
-	// 启动服务层
-	serverServer := server.NewServer()
-	serverServer.Run()
+	member := server.NewMember()
+	member.Run()
+	// 启动server
+	server := server.NewServer()
+	server.Run()
 
 	// 信号监听处理
 	c := make(chan os.Signal)
@@ -35,10 +31,9 @@ func Run() {
 
 	// 关闭节点
 	go func() {
-		serverServer.Close()
-		serverGate.Close()
-		gateMember.Close()
-		gateMaster.Close()
+		server.Close()
+		member.Close()
+		master.Close()
 	}()
 
 	time.Sleep(3 * time.Second)

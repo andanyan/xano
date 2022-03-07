@@ -1,16 +1,15 @@
 [base]
 version = "1.0.0"
+TcpDeal = 2
 
 [server]
-host = ""
-port = ""
+tcpAddr = ""
 masterAddr = ""
 
-[gateMaster]
+[Master]
 tcpAddr = ""
 httpAddr = ""
 
-[gateMember]
-host = ""
-port = "12000"
-masterAddr = "0.0.0.0:11000"
+[Member]
+tcpAddr = ":12000"
+masterAddr = ":11000"

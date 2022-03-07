@@ -1,4 +1,4 @@
-package gate
+package server
 
 import (
 	"xano/core"

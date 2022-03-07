@@ -34,35 +34,36 @@ func GetConfig() *Config {
 type Config struct {
 	Base Base
 
-	Server ServerConfig
+	Server Server
 
-	GateMaster GateMaster
+	Master Master
 
-	GateMember GateMember
+	Member Member
 }
 
 type Base struct {
 	// 版本号
 	Version string
+	// Msg协议
+	TcpDeal uint32
 }
 
-type ServerConfig struct {
+type Server struct {
 	// 服务器地址
-	Host string
-	Port string
+	TcpAddr string
 
 	// 通信的网关地址
 	MasterAddr string
 }
 
-type GateMaster struct {
+type Master struct {
 	TcpAddr  string
 	HttpAddr string
 }
 
-type GateMember struct {
-	Host string
-	Port string
+type Member struct {
+	// tcp地址
+	TcpAddr string
 	// 主节点地址
 	MasterAddr string
 }

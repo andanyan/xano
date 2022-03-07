@@ -84,3 +84,10 @@ message ServerStopNotice {}
 message ServerNodePush {
     repeated ServerNode Nodes = 1;
 }
+
+// 所有服务节点返回
+message ServerNodesRequest {}
+
+message ServerNodesResponse {
+    repeated ServerNode nodes = 1;
+}

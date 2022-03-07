@@ -57,3 +57,9 @@ const (
 	MemberNode       string = "MemberNode"
 	ServerNode       string = "ServerNode"
 )
+
+// 一些数值
+const (
+	MinUint64 uint64 = 0
+	MaxUint64 uint64 = ^uint64(0)
+)

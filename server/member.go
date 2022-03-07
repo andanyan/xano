@@ -1,4 +1,4 @@
-package gate
+package server
 
 import (
 	"time"
@@ -22,12 +22,6 @@ func (m *Member) Close() {
 }
 
 func (m *Member) Run() {
-	gConf := common.GetConfig().GateMember
-	addr := common.GenAddr(gConf.Host, gConf.Port)
-	if addr == "" {
-		return
-	}
-
 	// 注册回包服务
 	router.GetMemberRouter().Register(&router.RouterServer{
 		Name:   "",
@@ -37,13 +31,22 @@ func (m *Member) Run() {
 	// 处理与主节点的通信
 	go m.masterHandle()
 
-	// 启动服务
-	logger.Infof("Gate Member Start: %s", addr)
-	go core.NewTcpServer(addr, m.handle)
+	// 启动tcp服务
+	go m.runTcp()
+}
+
+// 运行tcp
+func (m *Member) runTcp() {
+	addr := common.GetConfig().Member.TcpAddr
+	if addr == "" {
+		return
+	}
+	logger.Infof("Gate Member TCP Server Start: %s", addr)
+	core.NewTcpServer(addr, m.tcpHandle)
 }
 
 // 转发逻辑
-func (m *Member) handle(h *core.TcpHandle, msg *deal.Msg) {
+func (m *Member) tcpHandle(h *core.TcpHandle, msg *deal.Msg) {
 	// 从连接池中拿到连接转发出去即可，拿到response之后释放连接
 	router := router.GetGateInfo()
 	tcpAddr := router.GetNodeRand(msg.Route)
@@ -74,12 +77,19 @@ func (m *Member) handle(h *core.TcpHandle, msg *deal.Msg) {
 	// 发送消息
 	msg.Mid = cli.Client.GetMid()
 	cli.Client.Send(msg)
-	<-c
+
+	t := time.NewTimer(common.TcpDeadDuration)
+	select {
+	case <-c:
+
+	case <-t.C:
+		logger.Error("translate timeout")
+	}
 }
 
 // 与主节点通信
 func (m *Member) masterHandle() {
-	gConf := common.GetConfig().GateMember
+	gConf := common.GetConfig().Member
 	if gConf.MasterAddr == "" {
 		return
 	}
@@ -114,11 +124,15 @@ func (m *Member) masterHandle() {
 
 // notice master member start
 func (m *Member) memberStart() {
+	memberAddr, err := common.ParseAddr(common.GetConfig().Member.TcpAddr)
+	if err != nil {
+		logger.Fatal(err)
+	}
 	input := &deal.MemberStartNotice{
 		Version: common.GetConfig().Base.Version,
-		Port:    common.GetConfig().GateMember.Port,
+		Port:    memberAddr.Port,
 	}
-	inputBys, err := common.MsgMarsh(common.TcpDealProtobuf, input)
+	inputBys, err := common.MsgMarsh(common.GetConfig().Base.TcpDeal, input)
 	if err != nil {
 		logger.Error(err)
 		return
@@ -127,7 +141,7 @@ func (m *Member) memberStart() {
 		Route:   "MemberStart",
 		Mid:     m.MasterClient.GetMid(),
 		MsgType: common.MsgTypeNotice,
-		Deal:    common.TcpDealProtobuf,
+		Deal:    common.GetConfig().Base.TcpDeal,
 		Data:    inputBys,
 		Version: common.GetConfig().Base.Version,
 	}
@@ -140,7 +154,7 @@ func (m *Member) memberClose() {
 		return
 	}
 	input := &deal.MemberStopNotice{}
-	inputBys, err := common.MsgMarsh(common.TcpDealProtobuf, input)
+	inputBys, err := common.MsgMarsh(common.GetConfig().Base.TcpDeal, input)
 	if err != nil {
 		logger.Error(err)
 		return
@@ -149,7 +163,7 @@ func (m *Member) memberClose() {
 		Route:   "MemberStop",
 		Mid:     m.MasterClient.GetMid(),
 		MsgType: common.MsgTypeNotice,
-		Deal:    common.TcpDealProtobuf,
+		Deal:    common.GetConfig().Base.TcpDeal,
 		Data:    inputBys,
 		Version: common.GetConfig().Base.Version,
 	}
@@ -159,7 +173,7 @@ func (m *Member) memberClose() {
 // heart master
 func (m *Member) memberHeart() {
 	input := &deal.Ping{}
-	inputBys, err := common.MsgMarsh(common.TcpDealProtobuf, input)
+	inputBys, err := common.MsgMarsh(common.GetConfig().Base.TcpDeal, input)
 	if err != nil {
 		logger.Error(err)
 		return
@@ -168,7 +182,7 @@ func (m *Member) memberHeart() {
 		Route:   "MemberHeart",
 		Mid:     m.MasterClient.GetMid(),
 		MsgType: common.MsgTypeRequest,
-		Deal:    common.TcpDealProtobuf,
+		Deal:    common.GetConfig().Base.TcpDeal,
 		Data:    inputBys,
 		Version: common.GetConfig().Base.Version,
 	}

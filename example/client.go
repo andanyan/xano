@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-	xano.WithConfig("./config/master.toml")
+	xano.WithConfig("./config/client.toml")
 
 	pool := core.GetPool("0.0.0.0:12000")
 	cli, err := pool.Get()
@@ -35,7 +35,7 @@ func main() {
 			B: i + 3,
 		}
 		logger.Debugf("%+v", input)
-		inputBys, err := common.MsgMarsh(common.TcpDealProtobuf, input)
+		inputBys, err := common.MsgMarsh(common.GetConfig().Base.TcpDeal, input)
 		if err != nil {
 			logger.Error(err)
 		}
@@ -43,14 +43,13 @@ func main() {
 			Route:   "Div",
 			Mid:     cli.Client.GetMid(),
 			MsgType: common.MsgTypeRequest,
-			Deal:    common.TcpDealProtobuf,
+			Deal:    common.GetConfig().Base.TcpDeal,
 			Version: common.GetConfig().Base.Version,
 			Data:    inputBys,
 		}
-		logger.Debugf("send: %+v", inputMsg)
 		cli.Client.Send(inputMsg)
 		i++
-		time.Sleep(10 * time.Millisecond)
+		time.Sleep(1000 * time.Millisecond)
 	}
 
 	c := make(chan struct{})

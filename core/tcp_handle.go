@@ -66,7 +66,7 @@ func (h *TcpHandle) Send(m *deal.Msg) {
 		logger.Error("TCP IS DISCONNECT")
 		return
 	}
-	msgBys, err := common.MsgMarsh(common.TcpDealProtobuf, m)
+	msgBys, err := common.MsgMarsh(common.GetConfig().Base.TcpDeal, m)
 	if err != nil {
 		logger.Error(err.Error())
 		return
@@ -111,6 +111,9 @@ func (h *TcpHandle) Status() bool {
 
 // 获取消息id
 func (h *TcpHandle) GetMid() uint64 {
+	if h.mid == common.MaxUint64 {
+		h.mid = 0
+	}
 	return atomic.AddUint64(&h.mid, 1)
 }
 
@@ -130,7 +133,7 @@ func (h *TcpHandle) runRead() {
 
 		if h.handleFunc != nil {
 			msg := new(deal.Msg)
-			err := common.MsgUnMarsh(common.TcpDealProtobuf, p.Data, msg)
+			err := common.MsgUnMarsh(common.GetConfig().Base.TcpDeal, p.Data, msg)
 			if err != nil {
 				logger.Error(err.Error())
 				continue
@@ -140,6 +143,9 @@ func (h *TcpHandle) runRead() {
 			var nmmid uint64 = 0
 			if mmid != nil {
 				nmmid = mmid.(uint64)
+			}
+			if nmmid == common.MaxUint64 {
+				nmmid = 0
 			}
 			if nmmid != msg.Mid-1 {
 				logger.Error("Fatal MsgId: ", nmmid, msg.Mid)

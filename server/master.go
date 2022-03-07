@@ -1,4 +1,4 @@
-package gate
+package server
 
 import (
 	"fmt"
@@ -21,6 +21,12 @@ func NewMaster() *Master {
 }
 
 func (m *Master) Run() {
+	// 注册主节点函数
+	router.GetMasterRouter().Register(&router.RouterServer{
+		Name:   "",
+		Server: new(MasterServer),
+	})
+
 	go m.runTcp()
 	go m.runHttp()
 }
@@ -30,20 +36,13 @@ func (m *Master) Close() {
 }
 
 func (m *Master) runTcp() {
-	gConf := common.GetConfig().GateMaster
-	if gConf.TcpAddr == "" {
+	addr := common.GetConfig().Master.TcpAddr
+	if addr == "" {
 		return
 	}
-
-	// 注册主节点函数
-	router.GetMasterRouter().Register(&router.RouterServer{
-		Name:   "",
-		Server: new(MasterServer),
-	})
-
 	// 启动服务
-	logger.Infof("Gate Master Tcp Start: %s", gConf.TcpAddr)
-	core.NewTcpServer(gConf.TcpAddr, m.tcpHandle)
+	logger.Infof("Gate Master Tcp Start: %s", addr)
+	core.NewTcpServer(addr, m.tcpHandle)
 }
 
 func (m *Master) tcpHandle(h *core.TcpHandle, msg *deal.Msg) {
@@ -55,18 +54,18 @@ func (m *Master) tcpHandle(h *core.TcpHandle, msg *deal.Msg) {
 }
 
 func (m *Master) runHttp() {
-	gConf := common.GetConfig().GateMaster
-	if gConf.HttpAddr == "" {
+	addr := common.GetConfig().Master.HttpAddr
+	if addr == "" {
 		return
 	}
 
 	httpMux := http.NewServeMux()
 	httpMux.HandleFunc("/", m.httpHandle)
 	httpServe := &http.Server{
-		Addr:    gConf.HttpAddr,
+		Addr:    addr,
 		Handler: httpMux,
 	}
-	logger.Infof("Gate Master Http Start: %s", gConf.HttpAddr)
+	logger.Infof("Gate Master Http Start: %s", addr)
 	err := httpServe.ListenAndServe()
 	if err != nil {
 		logger.Fatal(err.Error())
@@ -82,9 +81,16 @@ func (m *Master) httpHandle(w http.ResponseWriter, r *http.Request) {
 		routeName += strings.Title(routeArr[i])
 	}
 	if routeName == "" {
+		w.Write([]byte("Hello World"))
+		return
+	}
+	// 先判断是否有这个路由 如果没有 直接返回
+	route := router.GetMasterRouter().GetRoute(routeName)
+	if route == nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+
 	defer r.Body.Close()
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -99,7 +105,7 @@ func (m *Master) httpHandle(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 获取一个tcp连接, 进行逻辑转发
-	pool := core.GetPool(common.GetConfig().GateMaster.TcpAddr)
+	pool := core.GetPool(common.GetConfig().Master.TcpAddr)
 	cli, err := pool.Get()
 	if err != nil {
 		w.Write([]byte(err.Error()))
@@ -111,6 +117,7 @@ func (m *Master) httpHandle(w http.ResponseWriter, r *http.Request) {
 	c := make(chan struct{})
 
 	cli.Client.SetHandle(func(h *core.TcpHandle, m *deal.Msg) {
+		// 只要response的数据
 		if m.MsgType != common.MsgTypeResponse {
 			return
 		}
@@ -134,6 +141,7 @@ func (m *Master) httpHandle(w http.ResponseWriter, r *http.Request) {
 	t := time.NewTimer(common.HttpDeadDuration)
 	select {
 	case <-c:
+		w.Header().Add("Content-Type", "text/plain")
 		w.WriteHeader(http.StatusOK)
 	case <-t.C:
 		w.WriteHeader(http.StatusRequestTimeout)

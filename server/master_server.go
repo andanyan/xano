@@ -1,4 +1,4 @@
-package gate
+package server
 
 import (
 	"sync"
@@ -163,5 +163,13 @@ func (s *MasterServer) ServerHeart(ss *core.Session, input *deal.Ping) error {
 	node.LastTime = time.Now().Unix()
 	return ss.Response("ServerHeart", &deal.Pong{
 		Pong: node.LastTime,
+	})
+}
+
+// 获取所有的node
+func (s *MasterServer) ServerNodes(ss *core.Session, input *deal.ServerNodesRequest) error {
+	serverNodes := router.GetMasterNode().AllServerNode()
+	return ss.Response("ServerNodes", &deal.ServerNodesResponse{
+		Nodes: serverNodes,
 	})
 }

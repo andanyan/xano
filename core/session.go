@@ -14,6 +14,7 @@ type Session struct {
 	*TcpHandle
 }
 
+// 获取Session
 func GetSession(entity *TcpHandle) *Session {
 	ss := entity.Get(common.HandleKeySession)
 	if ss != nil {
@@ -52,7 +53,7 @@ func (s *Session) Rpc(route string, input, output interface{}) error {
 	defer pool.Recycle(poolObj)
 
 	// 组装消息体
-	inputBys, err := common.MsgMarsh(common.TcpDealProtobuf, input)
+	inputBys, err := common.MsgMarsh(common.GetConfig().Base.TcpDeal, input)
 	if err != nil {
 		return err
 	}
@@ -60,7 +61,7 @@ func (s *Session) Rpc(route string, input, output interface{}) error {
 		Route:   route,
 		Mid:     poolObj.Client.GetMid(),
 		MsgType: common.MsgTypeRpc,
-		Deal:    common.TcpDealProtobuf,
+		Deal:    common.GetConfig().Base.TcpDeal,
 		Version: common.GetConfig().Base.Version,
 		Data:    inputBys,
 	}
@@ -75,7 +76,7 @@ func (s *Session) Rpc(route string, input, output interface{}) error {
 			s.Send(m)
 			return
 		}
-		err := common.MsgUnMarsh(common.TcpDealProtobuf, m.Data, output)
+		err := common.MsgUnMarsh(m.Deal, m.Data, output)
 		if err != nil {
 			logger.Error(err.Error())
 		}
@@ -122,7 +123,7 @@ func (s *Session) Push(route string, input interface{}) error {
 // 向连接写入包
 func (s *Session) genMsg(route string, msgType uint32, input interface{}) (*deal.Msg, error) {
 	// 组装包 写入连接即可
-	inputBys, err := common.MsgMarsh(common.TcpDealProtobuf, input)
+	inputBys, err := common.MsgMarsh(common.GetConfig().Base.TcpDeal, input)
 	if err != nil {
 		return nil, err
 	}
@@ -130,7 +131,7 @@ func (s *Session) genMsg(route string, msgType uint32, input interface{}) (*deal
 		Route:   route,
 		Mid:     s.GetMid(),
 		MsgType: msgType,
-		Deal:    common.TcpDealProtobuf,
+		Deal:    common.GetConfig().Base.TcpDeal,
 		Version: common.GetConfig().Base.Version,
 		Data:    inputBys,
 	}
@@ -148,7 +149,7 @@ func (s *Session) HandleRoute(r *router.Router, m *deal.Msg) error {
 
 	// 解析输入
 	input := reflect.New(route.Input.Elem()).Interface()
-	err := common.MsgUnMarsh(m.Deal, m.Data, input)
+	err := common.MsgUnMarsh(m.Deal, []byte("{}"), input)
 	if err != nil {
 		logger.Error(err)
 		return err
