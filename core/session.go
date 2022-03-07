@@ -37,12 +37,6 @@ func (s *Session) Rpc(route string, input, output interface{}) error {
 		return fmt.Errorf("error input or output, not allow nil")
 	}
 
-	// 发送远程包
-	msg, err := s.genMsg(route, common.MsgTypeRpc, input)
-	if err != nil {
-		return err
-	}
-
 	// 向网关主节点发送Rpc请求
 	tcpAddr := router.GetMemberInfo().GetNodeRand()
 	if tcpAddr == "" {
@@ -57,11 +51,27 @@ func (s *Session) Rpc(route string, input, output interface{}) error {
 	}
 	defer pool.Recycle(poolObj)
 
+	// 组装消息体
+	inputBys, err := common.MsgMarsh(common.TcpDealProtobuf, input)
+	if err != nil {
+		return err
+	}
+	msg := &deal.Msg{
+		Route:   route,
+		Mid:     poolObj.Client.GetMid(),
+		MsgType: common.MsgTypeRpc,
+		Deal:    common.TcpDealProtobuf,
+		Version: common.GetConfig().Base.Version,
+		Data:    inputBys,
+	}
+	logger.Infof("Route: %s, Mid: %d, MsgType: %d, deal: %d, data: [%+v]", msg.Route, msg.Mid, msg.MsgType, msg.Deal, input)
+
 	// 收到Response包才认为已完成、其他包直接发射回去即可
 	c := make(chan struct{})
 	poolObj.Client.SetHandle(func(h *TcpHandle, m *deal.Msg) {
 		// 非Response的类型，直接返回给客户端
 		if m.MsgType != common.MsgTypeResponse {
+			m.Mid = s.GetMid()
 			s.Send(m)
 			return
 		}
@@ -143,8 +153,6 @@ func (s *Session) HandleRoute(r *router.Router, m *deal.Msg) error {
 		logger.Error(err)
 		return err
 	}
-
-	logger.Infof("Route: %s, Mid: %d, MsgType: %d, deal: %d, data: [%+v]", m.Route, m.Mid, m.MsgType, m.Deal, input)
 
 	// 调用函数
 	arg := []reflect.Value{reflect.ValueOf(s), reflect.ValueOf(input)}

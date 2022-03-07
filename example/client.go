@@ -47,9 +47,10 @@ func main() {
 			Version: common.GetConfig().Base.Version,
 			Data:    inputBys,
 		}
+		logger.Debugf("send: %+v", inputMsg)
 		cli.Client.Send(inputMsg)
 		i++
-		time.Sleep(1000 * time.Millisecond)
+		time.Sleep(10 * time.Millisecond)
 	}
 
 	c := make(chan struct{})

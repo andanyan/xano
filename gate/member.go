@@ -60,11 +60,10 @@ func (m *Member) handle(h *core.TcpHandle, msg *deal.Msg) {
 	}
 	defer pool.Recycle(cli)
 
-	curMid := msg.Mid
-
 	c := make(chan struct{})
 	cli.Client.SetHandle(func(_ *core.TcpHandle, rm *deal.Msg) {
-		rm.Mid = curMid
+		nMid := h.GetMid()
+		rm.Mid = nMid
 		h.Send(rm)
 		if rm.MsgType == common.MsgTypeResponse {
 			c <- struct{}{}

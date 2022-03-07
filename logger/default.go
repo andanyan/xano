@@ -18,4 +18,6 @@ var (
 	Errorf = logger.Errorf
 	Fatal  = logger.Fatal
 	Fatalf = logger.Fatalf
+	Print  = logger.Print
+	Printf = logger.Printf
 )

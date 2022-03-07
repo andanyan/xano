@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"runtime"
+	"runtime/debug"
 	"strings"
 	"time"
 )
@@ -50,6 +51,10 @@ type LevelItem struct {
 }
 
 var levelConfig = map[int]*LevelItem{
+	LoggerLevelAll: {
+		Color: 37,
+		Desc:  "LOG",
+	},
 	LoggerLevelTrace: {
 		Color: 32,
 		Desc:  "TRACE",
@@ -73,6 +78,10 @@ var levelConfig = map[int]*LevelItem{
 	LoggerLevelFatal: {
 		Color: 35,
 		Desc:  "FATAL",
+	},
+	LoggerLevelOff: {
+		Color: 35,
+		Desc:  "OFF",
 	},
 }
 
@@ -102,7 +111,7 @@ func (l *Logger) SetOutput(output *os.File) {
 }
 
 // 内容自适应
-func (l *Logger) write(level int, msg string) {
+func (l *Logger) write(level int, needTrace bool, msg string) {
 	if l.Level > level {
 		return
 	}
@@ -123,63 +132,74 @@ func (l *Logger) write(level int, msg string) {
 		}
 		fileDesc = fmt.Sprintf("%s:%d", file, line)
 	}
-
+	if needTrace {
+		msg += "\n" + string(debug.Stack())
+	}
 	s := fmt.Sprintf("%c[0;40;%dm%s%c[0m [%s]: %s %s\n", 0x1B, levelItem.Color, levelItem.Desc, 0x1B, timeDesc, fileDesc, msg)
 	l.Output.WriteString(s)
 }
 
 // 追踪
 func (l *Logger) Trace(v ...interface{}) {
-	l.write(LoggerLevelTrace, fmt.Sprint(v...))
+	l.write(LoggerLevelTrace, true, fmt.Sprint(v...))
 }
 
 func (l *Logger) Tracef(format string, v ...interface{}) {
-	l.write(LoggerLevelTrace, fmt.Sprintf(format, v...))
+	l.write(LoggerLevelTrace, true, fmt.Sprintf(format, v...))
 }
 
 // 调试
 func (l *Logger) Debug(v ...interface{}) {
-	l.write(LoggerLevelDebug, fmt.Sprint(v...))
+	l.write(LoggerLevelDebug, false, fmt.Sprint(v...))
 }
 
 func (l *Logger) Debugf(format string, v ...interface{}) {
-	l.write(LoggerLevelDebug, fmt.Sprintf(format, v...))
+	l.write(LoggerLevelDebug, false, fmt.Sprintf(format, v...))
 }
 
 // 警告
 func (l *Logger) Info(v ...interface{}) {
-	l.write(LoggerLevelInfo, fmt.Sprint(v...))
+	l.write(LoggerLevelInfo, false, fmt.Sprint(v...))
 }
 
 func (l *Logger) Infof(format string, v ...interface{}) {
-	l.write(LoggerLevelInfo, fmt.Sprintf(format, v...))
+	l.write(LoggerLevelInfo, false, fmt.Sprintf(format, v...))
 }
 
 // 警告
 func (l *Logger) Warn(v ...interface{}) {
-	l.write(LoggerLevelWarn, fmt.Sprint(v...))
+	l.write(LoggerLevelWarn, false, fmt.Sprint(v...))
 }
 
 func (l *Logger) Warnf(format string, v ...interface{}) {
-	l.write(LoggerLevelWarn, fmt.Sprintf(format, v...))
+	l.write(LoggerLevelWarn, false, fmt.Sprintf(format, v...))
 }
 
 // 报错
 func (l *Logger) Error(v ...interface{}) {
-	l.write(LoggerLevelError, fmt.Sprint(v...))
+	l.write(LoggerLevelError, true, fmt.Sprint(v...))
 }
 
 func (l *Logger) Errorf(format string, v ...interface{}) {
-	l.write(LoggerLevelError, fmt.Sprintf(format, v...))
+	l.write(LoggerLevelError, true, fmt.Sprintf(format, v...))
 }
 
 // 强制退出
 func (l *Logger) Fatal(v ...interface{}) {
-	l.write(LoggerLevelFatal, fmt.Sprint(v...))
+	l.write(LoggerLevelFatal, true, fmt.Sprint(v...))
 	os.Exit(1)
 }
 
 func (l *Logger) Fatalf(format string, v ...interface{}) {
-	l.write(LoggerLevelFatal, fmt.Sprintf(format, v...))
+	l.write(LoggerLevelFatal, true, fmt.Sprintf(format, v...))
 	os.Exit(1)
+}
+
+// 打印
+func (l *Logger) Print(v ...interface{}) {
+	l.write(LoggerLevelAll, false, fmt.Sprint(v...))
+}
+
+func (l *Logger) Printf(format string, v ...interface{}) {
+	l.write(LoggerLevelAll, false, fmt.Sprintf(format, v...))
 }

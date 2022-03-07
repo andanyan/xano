@@ -128,13 +128,12 @@ func (h *TcpHandle) runRead() {
 			}
 			// 消息id序号校验
 			mmid := h.Get(common.HandleKeyMid)
-
-			// mmid拦截
+			var nmmid uint64 = 0
 			if mmid != nil {
-				nmmid := mmid.(uint64)
-				if nmmid != msg.Mid && nmmid != msg.Mid-1 {
-					logger.Error("Fatal MsgId: ", nmmid, msg.Mid)
-				}
+				nmmid = mmid.(uint64)
+			}
+			if nmmid != msg.Mid-1 {
+				logger.Error("Fatal MsgId: ", nmmid, msg.Mid)
 			}
 
 			// 设置当前消息id
