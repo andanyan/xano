@@ -35,13 +35,16 @@ func (g *Gate) Run() {
 		Server: new(ServerGateServer),
 	})
 
-	// 不需要设置回包函数
+	// 设置回包函数
 	t.SetHandle(func(h *core.TcpHandle, m *deal.Msg) {
 		ss := core.GetSession(h)
 		router := router.GetGateRouter()
 		if err := ss.HandleRoute(router, m); err != nil {
 			logger.Error(err.Error())
 		}
+	})
+	t.SetCloseFunc(func() {
+		logger.Fatal("Master Disconnected!")
 	})
 	g.TcpClient = t
 

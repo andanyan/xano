@@ -97,6 +97,9 @@ func (m *Member) masterHandle() {
 			logger.Error(err.Error())
 		}
 	})
+	cli.SetCloseFunc(func() {
+		logger.Fatal("Master Disconnected!")
+	})
 	m.MasterClient = cli
 
 	// 发起Start通信

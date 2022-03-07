@@ -21,6 +21,7 @@ type TcpHandle struct {
 	sendChan   chan *common.Packet
 	readChan   chan *common.Packet
 	handleFunc TcpHandleFunc
+	closeFunc  func()
 	// 消息id
 	mid uint64
 }
@@ -35,9 +36,14 @@ func NewTcpHandle(conn net.Conn) *TcpHandle {
 	}
 }
 
-// 添加处理函数
+// 设置处理函数
 func (h *TcpHandle) SetHandle(handleFunc TcpHandleFunc) {
 	h.handleFunc = handleFunc
+}
+
+// 设置关闭回调
+func (h *TcpHandle) SetCloseFunc(f func()) {
+	h.closeFunc = f
 }
 
 // 处理关闭
@@ -49,6 +55,9 @@ func (h *TcpHandle) Close() {
 	close(h.readChan)
 	close(h.sendChan)
 	h.conn.Close()
+	if h.closeFunc != nil {
+		h.closeFunc()
+	}
 }
 
 // 包入列
