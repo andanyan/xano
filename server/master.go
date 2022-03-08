@@ -91,6 +91,13 @@ func (m *Master) httpHandle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// 协议处理 默认json
+	d := common.TcpDealJson
+	if r.Header.Get("Deal") == fmt.Sprintf("%d", common.TcpDealProtobuf) {
+		d = common.TcpDealProtobuf
+	}
+
+	// 请求数据获取
 	defer r.Body.Close()
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -99,9 +106,8 @@ func (m *Master) httpHandle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	d := common.TcpDealJson
-	if r.Header.Get("Deal") == fmt.Sprintf("%d", common.TcpDealProtobuf) {
-		d = common.TcpDealProtobuf
+	if d == common.TcpDealJson && len(body) == 0 {
+		body = []byte("{}")
 	}
 
 	// 获取一个tcp连接, 进行逻辑转发
@@ -142,7 +148,6 @@ func (m *Master) httpHandle(w http.ResponseWriter, r *http.Request) {
 	select {
 	case <-c:
 		w.Header().Add("Content-Type", "text/plain")
-		w.WriteHeader(http.StatusOK)
 	case <-t.C:
 		w.WriteHeader(http.StatusRequestTimeout)
 	}

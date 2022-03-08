@@ -23,21 +23,30 @@ func (s *Server) Close() {
 }
 
 func (s *Server) Run() {
-	addr := common.GetConfig().Server.TcpAddr
-	if addr == "" {
-		return
-	}
+	// 设置路由
+	router.GetGateRouter().Register(&router.RouterServer{
+		Name:   "",
+		Server: new(ServerServer),
+	})
 
 	// 与主节点进行通信
 	go s.masterHandle()
 
-	// 启动服务
-	logger.Infof("Server Start: %s", addr)
-	go core.NewTcpServer(addr, s.handle)
-
+	// 启动tcp
+	go s.runTcp()
 }
 
-func (s *Server) handle(h *core.TcpHandle, msg *deal.Msg) {
+func (s *Server) runTcp() {
+	addr := common.GetConfig().Server.TcpAddr
+	if addr == "" {
+		return
+	}
+	// 启动服务
+	logger.Infof("Server Start: %s", addr)
+	core.NewTcpServer(addr, s.tcpHandle)
+}
+
+func (s *Server) tcpHandle(h *core.TcpHandle, msg *deal.Msg) {
 	// 解析packet
 	var err error
 
@@ -68,11 +77,7 @@ func (s *Server) masterHandle() {
 		logger.Fatal(err)
 		return
 	}
-	// 设置路由
-	router.GetGateRouter().Register(&router.RouterServer{
-		Name:   "",
-		Server: new(ServerServer),
-	})
+
 	// 设置回包函数
 	t.SetHandle(func(h *core.TcpHandle, m *deal.Msg) {
 		ss := core.GetSession(h)
@@ -80,9 +85,6 @@ func (s *Server) masterHandle() {
 		if err := ss.HandleRoute(router, m); err != nil {
 			logger.Error(err.Error())
 		}
-	})
-	t.SetCloseFunc(func() {
-		logger.Fatal("Master Disconnected!")
 	})
 	s.TcpClient = t
 

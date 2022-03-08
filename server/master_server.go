@@ -173,3 +173,11 @@ func (s *MasterServer) ServerNodes(ss *core.Session, input *deal.ServerNodesRequ
 		Nodes: serverNodes,
 	})
 }
+
+// 获取所有的node
+func (s *MasterServer) MemberNodes(ss *core.Session, input *deal.MemberNodesRequest) error {
+	memberNodes := router.GetMasterNode().AllMemberNode()
+	return ss.Response("ServerNodes", &deal.MemberNodesResponse{
+		Nodes: memberNodes,
+	})
+}

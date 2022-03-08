@@ -149,7 +149,7 @@ func (s *Session) HandleRoute(r *router.Router, m *deal.Msg) error {
 
 	// 解析输入
 	input := reflect.New(route.Input.Elem()).Interface()
-	err := common.MsgUnMarsh(m.Deal, []byte("{}"), input)
+	err := common.MsgUnMarsh(m.Deal, m.Data, input)
 	if err != nil {
 		logger.Error(err)
 		return err

@@ -91,3 +91,10 @@ message ServerNodesRequest {}
 message ServerNodesResponse {
     repeated ServerNode nodes = 1;
 }
+
+// 所有服务节点返回
+message MemberNodesRequest {}
+
+message MemberNodesResponse {
+    repeated MemberNode nodes = 1;
+}

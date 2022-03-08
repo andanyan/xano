@@ -65,8 +65,7 @@ func (m *Member) tcpHandle(h *core.TcpHandle, msg *deal.Msg) {
 
 	c := make(chan struct{})
 	cli.Client.SetHandle(func(_ *core.TcpHandle, rm *deal.Msg) {
-		nMid := h.GetMid()
-		rm.Mid = nMid
+		rm.Mid = h.GetMid()
 		h.Send(rm)
 		if rm.MsgType == common.MsgTypeResponse {
 			c <- struct{}{}
@@ -106,9 +105,6 @@ func (m *Member) masterHandle() {
 		if err := ss.HandleRoute(router.GetMemberRouter(), m); err != nil {
 			logger.Error(err.Error())
 		}
-	})
-	cli.SetCloseFunc(func() {
-		logger.Fatal("Master Disconnected!")
 	})
 	m.MasterClient = cli
 

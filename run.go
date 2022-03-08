@@ -31,8 +31,8 @@ func Run() {
 
 	// 关闭节点
 	go func() {
-		server.Close()
 		member.Close()
+		server.Close()
 		master.Close()
 	}()
 
