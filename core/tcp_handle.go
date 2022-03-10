@@ -10,6 +10,8 @@ import (
 )
 
 type TcpHandleFunc func(h *TcpHandle, m *deal.Msg)
+type TcpInitFunc func(h *TcpHandle)
+type TcpCloseFunc func(h *TcpHandle)
 
 type TcpHandle struct {
 	value map[string]interface{}
@@ -21,6 +23,8 @@ type TcpHandle struct {
 	sendChan   chan *common.Packet
 	readChan   chan *common.Packet
 	handleFunc TcpHandleFunc
+	initFunc   TcpInitFunc
+	closeFunc  TcpCloseFunc
 	// 消息id
 	mid uint64
 }
@@ -35,8 +39,18 @@ func NewTcpHandle(conn net.Conn) *TcpHandle {
 	}
 }
 
-// 设置处理函数
-func (h *TcpHandle) SetHandle(handleFunc TcpHandleFunc) {
+// 设置初始化函数
+func (h *TcpHandle) SetInitFunc(f TcpInitFunc) {
+	h.initFunc = f
+}
+
+// 设置断开函数
+func (h *TcpHandle) SetCloseFunc(f TcpCloseFunc) {
+	h.closeFunc = f
+}
+
+// 设置包处理函数
+func (h *TcpHandle) SetHandleFunc(handleFunc TcpHandleFunc) {
 	h.handleFunc = handleFunc
 }
 
@@ -52,12 +66,13 @@ func (h *TcpHandle) Close() {
 }
 
 // 包入列
-func (h *TcpHandle) Send(m *deal.Msg) {
+func (h *TcpHandle) Send(msg *deal.Msg) {
 	if !h.status {
 		logger.Error("TCP IS DISCONNECT")
 		return
 	}
-	msgBys, err := common.MsgMarsh(common.GetConfig().Base.TcpDeal, m)
+	logger.Infof("Send SID: %d, Route: %s, Mid: %d, MsgType: %d, Deal: %d, DataLen: %d", msg.Sid, msg.Route, msg.Mid, msg.MsgType, msg.Deal, len(msg.Data))
+	msgBys, err := common.MsgMarsh(common.GetConfig().Base.TcpDeal, msg)
 	if err != nil {
 		logger.Error(err.Error())
 		return
@@ -110,6 +125,19 @@ func (h *TcpHandle) GetMid() uint64 {
 
 // 处理执行
 func (h *TcpHandle) handle() {
+	// 连接初始化
+	if h.initFunc != nil {
+		h.initFunc(h)
+	}
+
+	// 连接断开
+	defer func() {
+		h.Close()
+		if h.closeFunc != nil {
+			h.closeFunc(h)
+		}
+	}()
+
 	go h.runSend()
 	go h.runRead()
 	h.handleRead()
@@ -129,6 +157,7 @@ func (h *TcpHandle) runRead() {
 				logger.Error(err.Error())
 				continue
 			}
+			logger.Infof("RECEIVE SID: %d, Route: %s, Mid: %d, MsgType: %d, Deal: %d, DataLen: %d", msg.Sid, msg.Route, msg.Mid, msg.MsgType, msg.Deal, len(msg.Data))
 			// 消息id序号校验
 			mmid := h.Get(common.HandleKeyMid)
 			var nmmid uint64 = 0
@@ -175,7 +204,6 @@ func (h *TcpHandle) handleRead() {
 		n, err := h.conn.Read(buf)
 		if err != nil {
 			logger.Debug(err)
-			h.Close()
 			break
 		}
 		if n <= 0 {
@@ -191,5 +219,4 @@ func (h *TcpHandle) handleRead() {
 			}
 		}
 	}
-
 }

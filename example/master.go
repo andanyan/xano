@@ -2,14 +2,14 @@ package main
 
 import (
 	"xano"
-	"xano/core"
 	"xano/example/pb"
 	"xano/router"
+	"xano/session"
 )
 
 type A struct{}
 
-func (a *A) Add(s *core.Session, input *pb.AddRequest) error {
+func (a *A) Add(s *session.Session, input *pb.AddRequest) error {
 	var res int64
 	for _, val := range input.Args {
 		res += val

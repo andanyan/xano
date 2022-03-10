@@ -7,16 +7,18 @@ import (
 	"time"
 	"xano/common"
 	"xano/logger"
+	"xano/master"
+	"xano/member"
 	"xano/router"
 	"xano/server"
 )
 
 func Run() {
 	// 启动master
-	master := server.NewMaster()
+	master := master.NewMaster()
 	master.Run()
 	// 启动member
-	member := server.NewMember()
+	member := member.NewMember()
 	member.Run()
 	// 启动server
 	server := server.NewServer()

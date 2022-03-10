@@ -1,21 +1,22 @@
-package core
+package session
 
 import (
 	"fmt"
 	"reflect"
-	"time"
 	"xano/common"
+	"xano/core"
 	"xano/deal"
 	"xano/logger"
 	"xano/router"
 )
 
 type Session struct {
-	*TcpHandle
+	*core.TcpHandle
+	SID uint64
 }
 
 // 获取Session
-func GetSession(entity *TcpHandle) *Session {
+func GetSession(entity *core.TcpHandle) *Session {
 	ss := entity.Get(common.HandleKeySession)
 	if ss != nil {
 		return ss.(*Session)
@@ -27,76 +28,87 @@ func GetSession(entity *TcpHandle) *Session {
 	return ns
 }
 
+// 获取sid
+func (s *Session) GetSid() uint64 {
+	return s.SID
+}
+
 // RPC
 func (s *Session) Rpc(route string, input, output interface{}) error {
-	defer func() {
-		if err := recover(); err != nil {
-			logger.Error(err)
-		}
-	}()
-	if input == nil || output == nil {
-		return fmt.Errorf("error input or output, not allow nil")
-	}
-
 	// 向网关主节点发送Rpc请求
-	tcpAddr := router.GetMemberInfo().GetNodeRand()
+	tcpAddr := router.GetLocalNode().GetNodeRand(route)
+	//tcpAddr := router.GetMemberInfo().GetNodeRand()
 	if tcpAddr == "" {
 		return fmt.Errorf("has no member node valid")
 	}
-
-	// 获取连接
-	pool := GetPool(tcpAddr)
-	poolObj, err := pool.Get()
-	if err != nil {
-		return err
+	if input == nil || output == nil {
+		return fmt.Errorf("input or output is null")
 	}
-	defer pool.Recycle(poolObj)
 
-	// 组装消息体
+	// 组装消息
 	inputBys, err := common.MsgMarsh(common.GetConfig().Base.TcpDeal, input)
 	if err != nil {
 		return err
 	}
 	msg := &deal.Msg{
 		Route:   route,
-		Mid:     poolObj.Client.GetMid(),
-		MsgType: common.MsgTypeRpc,
+		Sid:     s.GetSid(),
+		Mid:     0, //会在下个环节重新赋值
+		MsgType: common.MsgTypeRequest,
 		Deal:    common.GetConfig().Base.TcpDeal,
 		Version: common.GetConfig().Base.Version,
 		Data:    inputBys,
 	}
-	logger.Infof("Route: %s, Mid: %d, MsgType: %d, deal: %d, data: [%+v]", msg.Route, msg.Mid, msg.MsgType, msg.Deal, input)
 
-	// 收到Response包才认为已完成、其他包直接发射回去即可
-	c := make(chan struct{})
-	poolObj.Client.SetHandle(func(h *TcpHandle, m *deal.Msg) {
-		// 非Response的类型，直接返回给客户端
-		if m.MsgType != common.MsgTypeResponse {
-			m.Mid = s.GetMid()
-			s.Send(m)
-			return
+	net := new(NetService)
+
+	resMsgs, err := net.Request(tcpAddr, msg)
+	if err != nil {
+		return err
+	}
+
+	// 遍历resMsg 非Response数据，直接返回给客户端
+	for _, item := range resMsgs {
+		if item.MsgType != common.MsgTypeResponse {
+			item.Mid = s.GetMid()
+			s.Send(item)
+		} else {
+			err := common.MsgUnMarsh(common.GetConfig().Base.TcpDeal, item.Data, output)
+			if err != nil {
+				return err
+			}
 		}
-		err := common.MsgUnMarsh(m.Deal, m.Data, output)
-		if err != nil {
-			logger.Error(err.Error())
-		}
-		c <- struct{}{}
-	})
-	defer poolObj.Client.SetHandle(nil)
-
-	// 发送包
-	poolObj.Client.Send(msg)
-
-	t := time.NewTimer(common.TcpDeadDuration)
-
-	select {
-	case <-c:
-
-	case <-t.C:
-		return fmt.Errorf("rpc timeout")
 	}
 
 	return nil
+}
+
+// NOTICE
+func (s *Session) Notice(route string, input interface{}) error {
+	// 向网关主节点发送Rpc请求
+	tcpAddr := router.GetLocalNode().GetNodeRand(route)
+	if tcpAddr == "" {
+		return fmt.Errorf("has no member node valid")
+	}
+
+	net := new(NetService)
+
+	// 组装消息
+	inputBys, err := common.MsgMarsh(common.GetConfig().Base.TcpDeal, input)
+	if err != nil {
+		return err
+	}
+	msg := &deal.Msg{
+		Route:   route,
+		Sid:     s.GetSid(),
+		Mid:     0, //会在下个环节重新赋值
+		MsgType: common.MsgTypeNotice,
+		Deal:    common.GetConfig().Base.TcpDeal,
+		Version: common.GetConfig().Base.Version,
+		Data:    inputBys,
+	}
+
+	return net.Notice(tcpAddr, msg)
 }
 
 // Response
@@ -129,13 +141,13 @@ func (s *Session) genMsg(route string, msgType uint32, input interface{}) (*deal
 	}
 	msg := &deal.Msg{
 		Route:   route,
+		Sid:     s.GetSid(),
 		Mid:     s.GetMid(),
 		MsgType: msgType,
 		Deal:    common.GetConfig().Base.TcpDeal,
 		Version: common.GetConfig().Base.Version,
 		Data:    inputBys,
 	}
-	logger.Infof("Route: %s, Mid: %d, MsgType: %d, deal: %d, data: [%+v]", msg.Route, msg.Mid, msg.MsgType, msg.Deal, input)
 	return msg, nil
 }
 

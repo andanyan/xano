@@ -1,155 +1,131 @@
 package server
 
 import (
-	"fmt"
-	"io/ioutil"
-	"net/http"
-	"strings"
 	"time"
 	"xano/common"
 	"xano/core"
 	"xano/deal"
 	"xano/logger"
 	"xano/router"
+	"xano/session"
 )
 
-// 主节点处理
-type Master struct{}
-
-func NewMaster() *Master {
-	return new(Master)
+type ServerMaster struct {
+	MasterClient *core.TcpClient
 }
 
-func (m *Master) Run() {
-	// 注册主节点函数
-	router.GetMasterRouter().Register(&router.RouterServer{
-		Name:   "",
-		Server: new(MasterServer),
-	})
+var serverMaster *ServerMaster
 
-	go m.runTcp()
-	go m.runHttp()
+func GetServerMaster() *ServerMaster {
+	if serverMaster == nil {
+		serverMaster = new(ServerMaster)
+	}
+	return serverMaster
 }
 
-func (m *Master) Close() {
-
-}
-
-func (m *Master) runTcp() {
-	addr := common.GetConfig().Master.TcpAddr
-	if addr == "" {
+// 与主节点进行通信
+func (s *ServerMaster) masterHandle() {
+	if common.GetConfig().Server.MasterAddr == "" {
 		return
 	}
-	// 启动服务
-	logger.Infof("Gate Master Tcp Start: %s", addr)
-	core.NewTcpServer(addr, m.tcpHandle)
-}
-
-func (m *Master) tcpHandle(h *core.TcpHandle, msg *deal.Msg) {
-	ss := core.GetSession(h)
-
-	if err := ss.HandleRoute(router.GetMasterRouter(), msg); err != nil {
-		logger.Error(err.Error())
-	}
-}
-
-func (m *Master) runHttp() {
-	addr := common.GetConfig().Master.HttpAddr
-	if addr == "" {
-		return
-	}
-
-	httpMux := http.NewServeMux()
-	httpMux.HandleFunc("/", m.httpHandle)
-	httpServe := &http.Server{
-		Addr:    addr,
-		Handler: httpMux,
-	}
-	logger.Infof("Gate Master Http Start: %s", addr)
-	err := httpServe.ListenAndServe()
+	t, err := core.NewTcpClient(common.GetConfig().Server.MasterAddr)
 	if err != nil {
-		logger.Fatal(err.Error())
-	}
-}
-
-func (m *Master) httpHandle(w http.ResponseWriter, r *http.Request) {
-	routeStr := r.URL.Path
-	routeArr := strings.Split(routeStr, "/")
-	routeLen := len(routeArr)
-	routeName := ""
-	for i := 0; i < routeLen; i++ {
-		routeName += strings.Title(routeArr[i])
-	}
-	if routeName == "" {
-		w.Write([]byte("Hello World"))
-		return
-	}
-	// 先判断是否有这个路由 如果没有 直接返回
-	route := router.GetMasterRouter().GetRoute(routeName)
-	if route == nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		logger.Fatal(err)
 		return
 	}
 
-	// 协议处理 默认json
-	d := common.TcpDealJson
-	if r.Header.Get("Deal") == fmt.Sprintf("%d", common.TcpDealProtobuf) {
-		d = common.TcpDealProtobuf
-	}
-
-	// 请求数据获取
-	defer r.Body.Close()
-	body, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		w.Write([]byte(err.Error()))
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	if d == common.TcpDealJson && len(body) == 0 {
-		body = []byte("{}")
-	}
-
-	// 获取一个tcp连接, 进行逻辑转发
-	pool := core.GetPool(common.GetConfig().Master.TcpAddr)
-	cli, err := pool.Get()
-	if err != nil {
-		w.Write([]byte(err.Error()))
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	defer pool.Recycle(cli)
-
-	c := make(chan struct{})
-
-	cli.Client.SetHandle(func(h *core.TcpHandle, m *deal.Msg) {
-		// 只要response的数据
-		if m.MsgType != common.MsgTypeResponse {
-			return
+	// 设置回包函数
+	t.SetHandleFunc(func(h *core.TcpHandle, m *deal.Msg) {
+		ss := session.GetSession(h)
+		ss.SID = m.Sid
+		router := router.GetGateRouter()
+		if err := ss.HandleRoute(router, m); err != nil {
+			logger.Error(err.Error())
 		}
-		w.Write(m.Data)
-		c <- struct{}{}
 	})
-	defer cli.Client.SetHandle(nil)
+	t.SetCloseFunc(func(h *core.TcpHandle) {
+		logger.Fatal("MASTER DISCONNECT")
+	})
+	s.MasterClient = t
 
-	// 组装消息并发送
+	// 同步包
+	s.serverStart()
+
+	// 启动心跳
+	for {
+		time.Sleep(common.TcpHeartDuration)
+		s.serverHeart()
+	}
+}
+
+// 启动
+func (s *ServerMaster) serverStart() {
+	serverAddr, err := common.ParseAddr(common.GetConfig().Server.TcpAddr)
+	if err != nil {
+		logger.Fatal(err)
+	}
+	routes := router.GetLocalRouter().GetDescs()
+	input := &deal.ServerStartRequest{
+		Version: common.GetConfig().Base.Version,
+		Port:    serverAddr.Port,
+		Routes:  routes,
+	}
+	inputBys, err := common.MsgMarsh(common.GetConfig().Base.TcpDeal, input)
+	if err != nil {
+		logger.Error(err)
+		return
+	}
 	msg := &deal.Msg{
-		Route:   routeName,
-		Mid:     cli.Client.GetMid(),
-		MsgType: common.MsgTypeRequest,
-		Deal:    d,
-		Data:    body,
+		Route:   "ServerStart",
+		Sid:     0,
+		Mid:     s.MasterClient.GetMid(),
+		MsgType: common.MsgTypeNotice,
+		Deal:    common.GetConfig().Base.TcpDeal,
+		Data:    inputBys,
 		Version: common.GetConfig().Base.Version,
 	}
-	cli.Client.Send(msg)
+	s.MasterClient.Send(msg)
+}
 
-	// 阻塞等待回包
-	t := time.NewTimer(common.HttpDeadDuration)
-	select {
-	case <-c:
-		w.Header().Add("Content-Type", "text/plain")
-	case <-t.C:
-		w.WriteHeader(http.StatusRequestTimeout)
+// 心跳
+func (s *ServerMaster) serverHeart() {
+	input := &deal.Ping{}
+	inputBys, err := common.MsgMarsh(common.GetConfig().Base.TcpDeal, input)
+	if err != nil {
+		logger.Error(err)
+		return
 	}
+	msg := &deal.Msg{
+		Route:   "ServerHeart",
+		Sid:     0,
+		Mid:     s.MasterClient.GetMid(),
+		MsgType: common.MsgTypeRequest,
+		Deal:    common.GetConfig().Base.TcpDeal,
+		Data:    inputBys,
+		Version: common.GetConfig().Base.Version,
+	}
+	s.MasterClient.Send(msg)
+}
 
+// 关闭
+func (s *ServerMaster) serverClose() {
+	if s.MasterClient == nil {
+		return
+	}
+	// 发送服务断开包
+	input := &deal.ServerStopNotice{}
+	inputBys, err := common.MsgMarsh(common.GetConfig().Base.TcpDeal, input)
+	if err != nil {
+		logger.Error(err.Error())
+		return
+	}
+	msg := &deal.Msg{
+		Route:   "ServerStop",
+		Sid:     0,
+		Mid:     s.MasterClient.GetMid(),
+		MsgType: common.MsgTypeNotice,
+		Deal:    common.GetConfig().Base.TcpDeal,
+		Data:    inputBys,
+	}
+	s.MasterClient.Send(msg)
 }

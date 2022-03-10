@@ -47,7 +47,6 @@ const (
 	MsgTypeResponse
 	MsgTypeNotice
 	MsgTypePush
-	MsgTypeRpc
 )
 
 // handle key
@@ -60,6 +59,7 @@ const (
 
 // 一些数值
 const (
-	MinUint64 uint64 = 0
-	MaxUint64 uint64 = ^uint64(0)
+	MinUint64     uint64 = 0
+	MaxUint64     uint64 = ^uint64(0)
+	MemberSidSize uint64 = 10000
 )

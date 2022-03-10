@@ -1,4 +1,4 @@
-package server
+package member
 
 import (
 	"time"
@@ -7,109 +7,55 @@ import (
 	"xano/deal"
 	"xano/logger"
 	"xano/router"
+	"xano/session"
 )
 
-type Member struct {
+// 与主节点的通信
+type MemberMaster struct {
 	MasterClient *core.TcpClient
 }
 
-func NewMember() *Member {
-	return new(Member)
-}
+var memberMaster *MemberMaster
 
-func (m *Member) Close() {
-	m.memberClose()
-}
-
-func (m *Member) Run() {
-	// 注册回包服务
-	router.GetMemberRouter().Register(&router.RouterServer{
-		Name:   "",
-		Server: new(MemberServer),
-	})
-
-	// 处理与主节点的通信
-	go m.masterHandle()
-
-	// 启动tcp服务
-	go m.runTcp()
-}
-
-// 运行tcp
-func (m *Member) runTcp() {
-	addr := common.GetConfig().Member.TcpAddr
-	if addr == "" {
-		return
+func GetMemberMaster() *MemberMaster {
+	if memberMaster == nil {
+		memberMaster = new(MemberMaster)
 	}
-	logger.Infof("Gate Member TCP Server Start: %s", addr)
-	core.NewTcpServer(addr, m.tcpHandle)
-}
-
-// 转发逻辑
-func (m *Member) tcpHandle(h *core.TcpHandle, msg *deal.Msg) {
-	// 从连接池中拿到连接转发出去即可，拿到response之后释放连接
-	router := router.GetGateInfo()
-	tcpAddr := router.GetNodeRand(msg.Route)
-	if tcpAddr == "" {
-		logger.Errorf("not found server: %s#%s", msg.Version, msg.Route)
-		return
-	}
-
-	pool := core.GetPool(tcpAddr)
-	cli, err := pool.Get()
-	if err != nil {
-		logger.Error(err.Error())
-		return
-	}
-	defer pool.Recycle(cli)
-
-	c := make(chan struct{})
-	cli.Client.SetHandle(func(_ *core.TcpHandle, rm *deal.Msg) {
-		rm.Mid = h.GetMid()
-		h.Send(rm)
-		if rm.MsgType == common.MsgTypeResponse {
-			c <- struct{}{}
-		}
-	})
-	defer cli.Client.SetHandle(nil)
-
-	// 发送消息
-	msg.Mid = cli.Client.GetMid()
-	cli.Client.Send(msg)
-
-	t := time.NewTimer(common.TcpDeadDuration)
-	select {
-	case <-c:
-
-	case <-t.C:
-		logger.Error("translate timeout")
-	}
+	return memberMaster
 }
 
 // 与主节点通信
-func (m *Member) masterHandle() {
-	gConf := common.GetConfig().Member
-	if gConf.MasterAddr == "" {
+func (m *MemberMaster) masterHandle() {
+	addr := common.GetConfig().Member.MasterAddr
+	if addr == "" {
 		return
 	}
 
 	// 与主节点建立连接
-	cli, err := core.NewTcpClient(gConf.MasterAddr)
+	cli, err := core.NewTcpClient(addr)
 	if err != nil {
 		logger.Fatal(err)
 		return
 	}
 	defer cli.Close()
-	cli.SetHandle(func(h *core.TcpHandle, m *deal.Msg) {
-		ss := core.GetSession(h)
+	cli.SetHandleFunc(func(h *core.TcpHandle, m *deal.Msg) {
+		ss := session.GetSession(h)
+		ss.SID = m.Sid
 		if err := ss.HandleRoute(router.GetMemberRouter(), m); err != nil {
 			logger.Error(err.Error())
 		}
+	})
+	cli.SetCloseFunc(func(h *core.TcpHandle) {
+		// 连接断开，即服务停止
+		logger.Fatal("MASTER DISCONNECT")
 	})
 	m.MasterClient = cli
 
 	// 发起Start通信
 	m.memberStart()
+
+	// 获取sid
+	m.memberSid()
 
 	// 启动心跳
 	for {
@@ -119,12 +65,12 @@ func (m *Member) masterHandle() {
 }
 
 // notice master member start
-func (m *Member) memberStart() {
+func (m *MemberMaster) memberStart() {
 	memberAddr, err := common.ParseAddr(common.GetConfig().Member.TcpAddr)
 	if err != nil {
 		logger.Fatal(err)
 	}
-	input := &deal.MemberStartNotice{
+	input := &deal.MemberStartRequest{
 		Version: common.GetConfig().Base.Version,
 		Port:    memberAddr.Port,
 	}
@@ -135,6 +81,7 @@ func (m *Member) memberStart() {
 	}
 	msg := &deal.Msg{
 		Route:   "MemberStart",
+		Sid:     0,
 		Mid:     m.MasterClient.GetMid(),
 		MsgType: common.MsgTypeNotice,
 		Deal:    common.GetConfig().Base.TcpDeal,
@@ -145,7 +92,7 @@ func (m *Member) memberStart() {
 }
 
 // notice master member close
-func (m *Member) memberClose() {
+func (m *MemberMaster) memberClose() {
 	if m.MasterClient == nil {
 		return
 	}
@@ -157,6 +104,7 @@ func (m *Member) memberClose() {
 	}
 	msg := &deal.Msg{
 		Route:   "MemberStop",
+		Sid:     0,
 		Mid:     m.MasterClient.GetMid(),
 		MsgType: common.MsgTypeNotice,
 		Deal:    common.GetConfig().Base.TcpDeal,
@@ -167,7 +115,7 @@ func (m *Member) memberClose() {
 }
 
 // heart master
-func (m *Member) memberHeart() {
+func (m *MemberMaster) memberHeart() {
 	input := &deal.Ping{}
 	inputBys, err := common.MsgMarsh(common.GetConfig().Base.TcpDeal, input)
 	if err != nil {
@@ -176,8 +124,59 @@ func (m *Member) memberHeart() {
 	}
 	msg := &deal.Msg{
 		Route:   "MemberHeart",
+		Sid:     0,
 		Mid:     m.MasterClient.GetMid(),
 		MsgType: common.MsgTypeRequest,
+		Deal:    common.GetConfig().Base.TcpDeal,
+		Data:    inputBys,
+		Version: common.GetConfig().Base.Version,
+	}
+	m.MasterClient.Send(msg)
+	// 每次心跳是上报
+	GetMemberMaster().memberInfo()
+}
+
+// 发起sid取值
+func (m *MemberMaster) memberSid() {
+	if m.MasterClient == nil {
+		return
+	}
+	input := &deal.MemberGetSidRequest{}
+	inputBys, err := common.MsgMarsh(common.GetConfig().Base.TcpDeal, input)
+	if err != nil {
+		logger.Error(err)
+		return
+	}
+	msg := &deal.Msg{
+		Route:   "MemberGetSid",
+		Sid:     0,
+		Mid:     m.MasterClient.GetMid(),
+		MsgType: common.MsgTypeNotice,
+		Deal:    common.GetConfig().Base.TcpDeal,
+		Data:    inputBys,
+		Version: common.GetConfig().Base.Version,
+	}
+	m.MasterClient.Send(msg)
+}
+
+// 同步session
+func (m *MemberMaster) memberInfo() {
+	if m.MasterClient == nil {
+		return
+	}
+	input := &deal.MemberInfoNotice{
+		SessionCount: session.GetConnect().GetCount(),
+	}
+	inputBys, err := common.MsgMarsh(common.GetConfig().Base.TcpDeal, input)
+	if err != nil {
+		logger.Error(err)
+		return
+	}
+	msg := &deal.Msg{
+		Route:   "MemberInfo",
+		Sid:     0,
+		Mid:     m.MasterClient.GetMid(),
+		MsgType: common.MsgTypeNotice,
 		Deal:    common.GetConfig().Base.TcpDeal,
 		Data:    inputBys,
 		Version: common.GetConfig().Base.Version,

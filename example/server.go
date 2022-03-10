@@ -2,15 +2,15 @@ package main
 
 import (
 	"xano"
-	"xano/core"
 	"xano/example/pb"
 	"xano/logger"
 	"xano/router"
+	"xano/session"
 )
 
 type B struct{}
 
-func (b *B) Div(s *core.Session, input *pb.DivRequest) error {
+func (b *B) Div(s *session.Session, input *pb.DivRequest) error {
 	addRes := new(pb.AddResponse)
 	err := s.Rpc("Add", &pb.AddRequest{
 		Args: []int64{input.A, input.B},

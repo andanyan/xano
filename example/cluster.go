@@ -1,16 +1,17 @@
 package main
 
 import (
+	"os"
 	"xano"
-	"xano/core"
 	"xano/example/pb"
 	"xano/logger"
 	"xano/router"
+	"xano/session"
 )
 
 type A struct{}
 
-func (a *A) Add(s *core.Session, input *pb.AddRequest) error {
+func (a *A) Add(s *session.Session, input *pb.AddRequest) error {
 	var res int64
 	for _, val := range input.Args {
 		res += val
@@ -22,7 +23,7 @@ func (a *A) Add(s *core.Session, input *pb.AddRequest) error {
 
 type B struct{}
 
-func (b *B) Div(s *core.Session, input *pb.DivRequest) error {
+func (b *B) Div(s *session.Session, input *pb.DivRequest) error {
 	addRes := new(pb.AddResponse)
 	err := s.Rpc("Add", &pb.AddRequest{
 		Args: []int64{input.A, input.B},
@@ -50,6 +51,7 @@ func main() {
 		Name:   "",
 		Server: new(B),
 	})
+	xano.WithLog(os.Stdout, logger.LoggerLevelInfo)
 
 	xano.Run()
 }

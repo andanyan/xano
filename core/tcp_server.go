@@ -5,7 +5,7 @@ import (
 	"xano/logger"
 )
 
-func NewTcpServer(addr string, handleFunc TcpHandleFunc) {
+func NewTcpServer(addr string, opsFunc ...func(h *TcpHandle)) {
 	l, err := net.Listen("tcp", addr)
 	if err != nil {
 		logger.Fatal(err.Error())
@@ -19,7 +19,10 @@ func NewTcpServer(addr string, handleFunc TcpHandleFunc) {
 			continue
 		}
 		h := NewTcpHandle(conn)
-		h.SetHandle(handleFunc)
+		for _, f := range opsFunc {
+			f(h)
+		}
+		//h.SetHandle(handleFunc)
 		go h.handle()
 	}
 }

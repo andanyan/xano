@@ -12,22 +12,20 @@ option go_package = "../deal";
 
 // 包消息
 message Msg {
+    // 通信SessionId
+    uint64 Sid = 1;
     // 路由 模块_方法
-    // @inject_tag: json:"route"
-    string route = 1;
+    string Route = 2;
     // 消息id
-    // @inject_tag: json:"mid"
-    uint64 mid = 2;
+    uint64 Mid = 3;
     // 消息类型
-    uint32 msg_type = 3;
+    uint32 MsgType = 4;
     // data数据协议
-    // @inject_tag: json:"deal"
-    uint32 deal = 4;
+    uint32 Deal = 5;
     // 数据
-    // @inject_tag: json:"data"
-    bytes data = 5;
+    bytes Data = 6;
     // 版本号
-    string version = 6;
+    string Version = 7;
 }
 
 // 心跳
@@ -36,22 +34,12 @@ message Pong {
     int64 Pong = 1;
 }
 
-// 路由注册
-message MemberStartNotice {
-    // 版本号
-    string Version = 1;
-    // 端口
-    string Port = 2;
-}
-
-// 路由关闭
-message MemberStopNotice {}
-
 // member node
 message MemberNode {
     string Version = 1;
     string Addr = 2;
     int64 LastTime = 3;
+    uint64 SessionCount = 4;
 }
 
 // server node
@@ -62,13 +50,24 @@ message ServerNode {
     repeated string Routes = 4;
 }
 
-// 从节点推送
-message MemberNodePush {
-    repeated MemberNode Nodes = 1;
+// 路由注册
+message MemberStartRequest {
+    // 版本号
+    string Version = 1;
+    // 端口
+    string Port = 2;
 }
 
+message MemberStartResponse {
+    repeated ServerNode Nodes = 1;
+}
+
+// 路由关闭
+message MemberStopNotice {}
+
+
 // 服务节点启动
-message ServerStartNotice {
+message ServerStartRequest {
     // 版本号
     string Version = 1;
     // 端口
@@ -77,13 +76,13 @@ message ServerStartNotice {
     repeated string Routes = 3;
 }
 
+message ServerStartResponse {
+    repeated ServerNode nodes = 1;
+}
+
 // 服务节点关闭
 message ServerStopNotice {}
 
-// 服务节点推送
-message ServerNodePush {
-    repeated ServerNode Nodes = 1;
-}
 
 // 所有服务节点返回
 message ServerNodesRequest {}
@@ -97,4 +96,23 @@ message MemberNodesRequest {}
 
 message MemberNodesResponse {
     repeated MemberNode nodes = 1;
+}
+
+message MemberGetSidRequest {}
+
+message MemberGetSidResponse {
+    uint64 Min = 1;
+    uint64 Max = 2;
+}
+
+message SessionInitPush {
+    uint64 Sid = 1;
+}
+
+message SessionCloseNotice {
+    uint64 Sid = 1;
+}
+
+message MemberInfoNotice {
+    uint64 SessionCount = 1;
 }
