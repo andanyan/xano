@@ -160,6 +160,10 @@ func (s *MasterServer) MemberGetSid(ss *session.Session, input *deal.MemberGetSi
 	max := s.MemberSid + common.MemberSidSize
 	s.MemberSid = max
 
+	if max > common.MaxUint64-common.MemberSidSize {
+		s.MemberSid = 0
+	}
+
 	return ss.Response("MemberGetSid", &deal.MemberGetSidResponse{
 		Min: min,
 		Max: max,
