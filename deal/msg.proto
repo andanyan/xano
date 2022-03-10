@@ -29,7 +29,9 @@ message Msg {
 }
 
 // 心跳
-message Ping {}
+message Ping {
+    Psutil Psutil = 1;
+}
 message Pong {
     int64 Pong = 1;
 }
@@ -40,6 +42,7 @@ message MemberNode {
     string Addr = 2;
     int64 LastTime = 3;
     uint64 SessionCount = 4;
+    Psutil Psutil = 5;
 }
 
 // server node
@@ -48,6 +51,7 @@ message ServerNode {
     string Addr = 2;
     int64 LastTime = 3;
     repeated string Routes = 4;
+    Psutil Psutil = 5;
 }
 
 // 路由注册
@@ -115,4 +119,25 @@ message SessionCloseNotice {
 
 message MemberInfoNotice {
     uint64 SessionCount = 1;
+}
+
+// 内存数
+message Psutil {
+    // 内存
+    uint64 MemTotal = 1;
+    uint64 MemAvailable = 2;
+    uint64 MemUsed = 3;
+    double MemUsePercent = 4;
+    uint64 MemFree = 5;
+
+    // cpu
+    int32 CpuCores = 6;
+    string CpuModelName = 7;
+    double CpuUsePercent = 8;
+
+    // host
+    string HostName = 9;
+    uint64 HostBoostTime = 10;
+    string HostOs = 11;
+    string HostPlatform = 12;
 }

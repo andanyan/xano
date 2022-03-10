@@ -1,0 +1,15 @@
+[base]
+version = "1.0.0"
+TcpDeal = 2
+
+[server]
+tcpAddr = ":21001"
+masterAddr = ":11000"
+
+[Master]
+tcpAddr = ""
+httpAddr = ""
+
+[Member]
+tcpAddr = ""
+masterAddr = ""

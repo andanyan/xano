@@ -71,6 +71,7 @@ func (s *MasterServer) MemberStop(ss *session.Session, input *deal.MemberStopNot
 func (s *MasterServer) MemberHeart(ss *session.Session, input *deal.Ping) error {
 	node := ss.Get(common.MemberNode).(*deal.MemberNode)
 	node.LastTime = time.Now().Unix()
+	node.Psutil = input.Psutil
 	return ss.Response("MemberHeart", &deal.Pong{
 		Pong: node.LastTime,
 	})
@@ -144,6 +145,7 @@ func (s *MasterServer) ServerStop(ss *session.Session, input *deal.ServerStopNot
 func (s *MasterServer) ServerHeart(ss *session.Session, input *deal.Ping) error {
 	node := ss.Get(common.ServerNode).(*deal.ServerNode)
 	node.LastTime = time.Now().Unix()
+	node.Psutil = input.Psutil
 	return ss.Response("ServerHeart", &deal.Pong{
 		Pong: node.LastTime,
 	})

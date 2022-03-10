@@ -53,8 +53,8 @@ func (s *ServerMaster) masterHandle() {
 
 	// 启动心跳
 	for {
-		time.Sleep(common.TcpHeartDuration)
 		s.serverHeart()
+		time.Sleep(common.TcpHeartDuration)
 	}
 }
 
@@ -89,7 +89,9 @@ func (s *ServerMaster) serverStart() {
 
 // 心跳
 func (s *ServerMaster) serverHeart() {
-	input := &deal.Ping{}
+	input := &deal.Ping{
+		Psutil: common.GetPsutil(),
+	}
 	inputBys, err := common.MsgMarsh(common.GetConfig().Base.TcpDeal, input)
 	if err != nil {
 		logger.Error(err)
