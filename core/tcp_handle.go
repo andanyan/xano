@@ -2,6 +2,7 @@ package core
 
 import (
 	"net"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"xano/common"
@@ -71,7 +72,9 @@ func (h *TcpHandle) Send(msg *deal.Msg) {
 		logger.Error("TCP IS DISCONNECT")
 		return
 	}
-	logger.Infof("Send SID: %d, Route: %s, Mid: %d, MsgType: %d, Deal: %d, DataLen: %d", msg.Sid, msg.Route, msg.Mid, msg.MsgType, msg.Deal, len(msg.Data))
+	if !strings.HasSuffix(msg.Route, "Heart") {
+		logger.Infof("RECEIVE SID: %d, Route: %s, Mid: %d, MsgType: %d, Deal: %d, Data: %s", msg.Sid, msg.Route, msg.Mid, msg.MsgType, msg.Deal, msg.Data)
+	}
 	msgBys, err := common.MsgMarsh(common.GetConfig().Base.TcpDeal, msg)
 	if err != nil {
 		logger.Error(err.Error())
@@ -157,7 +160,9 @@ func (h *TcpHandle) runRead() {
 				logger.Error(err.Error())
 				continue
 			}
-			logger.Infof("RECEIVE SID: %d, Route: %s, Mid: %d, MsgType: %d, Deal: %d, DataLen: %d", msg.Sid, msg.Route, msg.Mid, msg.MsgType, msg.Deal, len(msg.Data))
+			if !strings.HasSuffix(msg.Route, "Heart") {
+				logger.Infof("RECEIVE SID: %d, Route: %s, Mid: %d, MsgType: %d, Deal: %d, Data: %s", msg.Sid, msg.Route, msg.Mid, msg.MsgType, msg.Deal, msg.Data)
+			}
 			// 消息id序号校验
 			mmid := h.Get(common.HandleKeyMid)
 			var nmmid uint64 = 0

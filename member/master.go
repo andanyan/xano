@@ -34,7 +34,10 @@ func (m *MemberMaster) masterHandle() {
 	// 与主节点建立连接
 	cli, err := core.NewTcpClient(addr)
 	if err != nil {
-		logger.Fatal(err)
+		logger.Error("MASTER DISCONNECT:", err)
+		m.MasterClient = nil
+		time.Sleep(common.DelayDuration)
+		m.masterHandle()
 		return
 	}
 	defer cli.Close()
@@ -46,8 +49,11 @@ func (m *MemberMaster) masterHandle() {
 		}
 	})
 	cli.SetCloseFunc(func(h *core.TcpHandle) {
-		// 连接断开，即服务停止
-		logger.Fatal("MASTER DISCONNECT")
+		logger.Error("MASTER DISCONNECT:", err)
+		m.MasterClient = nil
+		time.Sleep(common.DelayDuration)
+		m.masterHandle()
+		return
 	})
 	m.MasterClient = cli
 
@@ -55,7 +61,9 @@ func (m *MemberMaster) masterHandle() {
 	m.memberStart()
 
 	// 获取sid
-	m.memberSid()
+	if !session.GetConnect().IsEnough() {
+		m.memberSid()
+	}
 
 	// 启动心跳
 	for {
@@ -66,6 +74,9 @@ func (m *MemberMaster) masterHandle() {
 
 // notice master member start
 func (m *MemberMaster) memberStart() {
+	if m.MasterClient == nil {
+		return
+	}
 	memberAddr, err := common.ParseAddr(common.GetConfig().Member.TcpAddr)
 	if err != nil {
 		logger.Fatal(err)
@@ -83,7 +94,7 @@ func (m *MemberMaster) memberStart() {
 		Route:   "MemberStart",
 		Sid:     0,
 		Mid:     m.MasterClient.GetMid(),
-		MsgType: common.MsgTypeNotice,
+		MsgType: common.MsgTypeRequest,
 		Deal:    common.GetConfig().Base.TcpDeal,
 		Data:    inputBys,
 		Version: common.GetConfig().Base.Version,
@@ -116,6 +127,9 @@ func (m *MemberMaster) memberClose() {
 
 // heart master
 func (m *MemberMaster) memberHeart() {
+	if m.MasterClient == nil {
+		return
+	}
 	input := &deal.Ping{
 		Psutil: common.GetPsutil(),
 	}

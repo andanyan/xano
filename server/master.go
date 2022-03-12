@@ -30,7 +30,10 @@ func (s *ServerMaster) masterHandle() {
 	}
 	t, err := core.NewTcpClient(common.GetConfig().Server.MasterAddr)
 	if err != nil {
-		logger.Fatal(err)
+		logger.Error("MASTER DISCONNECT:", err)
+		s.MasterClient = nil
+		time.Sleep(common.DelayDuration)
+		s.masterHandle()
 		return
 	}
 
@@ -44,7 +47,11 @@ func (s *ServerMaster) masterHandle() {
 		}
 	})
 	t.SetCloseFunc(func(h *core.TcpHandle) {
-		logger.Fatal("MASTER DISCONNECT")
+		logger.Error("MASTER DISCONNECT:", err)
+		s.MasterClient = nil
+		time.Sleep(common.DelayDuration)
+		s.masterHandle()
+		return
 	})
 	s.MasterClient = t
 
@@ -60,6 +67,9 @@ func (s *ServerMaster) masterHandle() {
 
 // 启动
 func (s *ServerMaster) serverStart() {
+	if s.MasterClient == nil {
+		return
+	}
 	serverAddr, err := common.ParseAddr(common.GetConfig().Server.TcpAddr)
 	if err != nil {
 		logger.Fatal(err)
@@ -79,7 +89,7 @@ func (s *ServerMaster) serverStart() {
 		Route:   "ServerStart",
 		Sid:     0,
 		Mid:     s.MasterClient.GetMid(),
-		MsgType: common.MsgTypeNotice,
+		MsgType: common.MsgTypeRequest,
 		Deal:    common.GetConfig().Base.TcpDeal,
 		Data:    inputBys,
 		Version: common.GetConfig().Base.Version,
@@ -89,6 +99,9 @@ func (s *ServerMaster) serverStart() {
 
 // 心跳
 func (s *ServerMaster) serverHeart() {
+	if s.MasterClient == nil {
+		return
+	}
 	input := &deal.Ping{
 		Psutil: common.GetPsutil(),
 	}

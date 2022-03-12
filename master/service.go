@@ -113,6 +113,14 @@ func (s *MasterServer) ServerStart(ss *session.Session, input *deal.ServerStartR
 			Nodes: serverNodes,
 		})
 	}
+	// 通知所有服务节点 服务节点更新
+	for _, item := range s.ServerSessions {
+		if item != ss {
+			item.Push("ServerStart", &deal.ServerStartResponse{
+				Nodes: serverNodes,
+			})
+		}
+	}
 
 	// 告知服务节点所有的网关节点
 	return ss.Response("ServerStart", &deal.ServerStartResponse{
