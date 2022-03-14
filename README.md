@@ -36,7 +36,7 @@ masterAddr = ":11000"
 
 ## 数据结构
 ### packet
-packet是本框架消息传递的最小单位，包含两个字段，Length
+packet是本框架消息传递的最小单位，包含两个字段，Length是Data的长度，tcp将根据length读取每个包的长度和数据，解决粘包问题。
 
 ```
 type Packet struct {
