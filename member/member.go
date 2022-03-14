@@ -53,6 +53,12 @@ func (m *Member) runTcp() {
 
 // 转发逻辑
 func (m *Member) tcpHandle(h *core.TcpHandle, msg *deal.Msg) {
+	// sid拦截
+	if msg.Sid <= 0 {
+		logger.Warn("Invaild Msg No Sid")
+		return
+	}
+
 	// 从连接池中拿到连接转发出去即可，拿到response之后释放连接
 	tcpAddr := router.GetMemberNode().GetNodeRand(msg.Route)
 	if tcpAddr == "" {
