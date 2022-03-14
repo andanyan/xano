@@ -146,6 +146,23 @@ func (s *MasterServer) ServerStop(ss *session.Session, input *deal.ServerStopNot
 	}
 	s.ServerSessions = s.ServerSessions[:index]
 
+	// 节点数据
+	serverNodes := router.GetMasterNode().AllServerNode()
+	// 通知所有的从节点 服务节点信息更新
+	for _, item := range s.MemberSessions {
+		item.Push("MemberStart", &deal.MemberStartResponse{
+			Nodes: serverNodes,
+		})
+	}
+	// 通知所有服务节点 服务节点更新
+	for _, item := range s.ServerSessions {
+		if item != ss {
+			item.Push("ServerStart", &deal.ServerStartResponse{
+				Nodes: serverNodes,
+			})
+		}
+	}
+
 	return nil
 }
 
