@@ -10,9 +10,7 @@ import (
 )
 
 // 微服务对象,可独立运行tcp服务
-type Server struct {
-	TcpClient *core.TcpClient
-}
+type Server struct{}
 
 func NewServer() *Server {
 	return new(Server)

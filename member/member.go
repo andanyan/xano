@@ -10,7 +10,6 @@ import (
 )
 
 type Member struct {
-	MasterClient *core.TcpClient
 }
 
 func NewMember() *Member {
