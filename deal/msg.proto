@@ -38,11 +38,12 @@ message Pong {
 
 // member node
 message MemberNode {
-    string Version = 1;
-    string Addr = 2;
-    int64 LastTime = 3;
-    uint64 SessionCount = 4;
-    Psutil Psutil = 5;
+    uint64 MchId = 1;
+    string Version = 2;
+    string Addr = 3;
+    int64 LastTime = 4;
+    uint64 SessionCount = 5;
+    Psutil Psutil = 6;
 }
 
 // server node
@@ -69,6 +70,9 @@ message MemberStartResponse {
 // 路由关闭
 message MemberStopNotice {}
 
+message MemberMchIDPush {
+    uint64 MchID = 1;
+}
 
 // 服务节点启动
 message ServerStartRequest {
@@ -102,19 +106,8 @@ message MemberNodesResponse {
     repeated MemberNode nodes = 1;
 }
 
-message MemberGetSidRequest {}
-
-message MemberGetSidResponse {
-    uint64 Min = 1;
-    uint64 Max = 2;
-}
-
-message SessionInitPush {
-    uint64 Sid = 1;
-}
-
-message SessionCloseNotice {
-    uint64 Sid = 1;
+message MemberNodePush {
+    repeated MemberNode nodes = 1;
 }
 
 message MemberInfoNotice {
@@ -140,4 +133,9 @@ message Psutil {
     uint64 HostBoostTime = 10;
     string HostOs = 11;
     string HostPlatform = 12;
+}
+
+message SessionInitRequest {}
+message SessionInitResponse {
+    uint64 Sid = 1;
 }

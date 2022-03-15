@@ -18,3 +18,8 @@ func (m *ServerServer) ServerStart(ss *session.Session, input *deal.ServerStartR
 	router.GetLocalNode().SetNode(input.Nodes)
 	return nil
 }
+
+func (m *ServerServer) MemberNode(ss *session.Session, input *deal.MemberNodePush) error {
+	router.GetLocalMemberNode().SetNode(input.Nodes)
+	return nil
+}

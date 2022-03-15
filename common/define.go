@@ -55,6 +55,8 @@ const (
 	HandleKeyMid     string = "Mid"
 	MemberNode       string = "MemberNode"
 	ServerNode       string = "ServerNode"
+	MchIDKey         string = "MchID"
+	SessionInitKey   string = "SessionInit"
 )
 
 // 一些数值
@@ -62,4 +64,5 @@ const (
 	MinUint64     uint64 = 0
 	MaxUint64     uint64 = ^uint64(0)
 	MemberSidSize uint64 = 10000
+	MaxSessionNum uint64 = 1000000
 )

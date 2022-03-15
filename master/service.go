@@ -14,7 +14,7 @@ type MasterServer struct {
 	Mux            sync.Mutex
 	MemberSessions []*session.Session
 	ServerSessions []*session.Session
-	MemberSid      uint64
+	MemberMchID    uint64
 }
 
 // member start
@@ -24,7 +24,14 @@ func (s *MasterServer) MemberStart(ss *session.Session, input *deal.MemberStartR
 		return err
 	}
 
+	s.Mux.Lock()
+	defer s.Mux.Unlock()
+
+	mchID := s.MemberMchID
+	s.MemberMchID++
+
 	newNode := &deal.MemberNode{
+		MchId:        mchID,
 		Version:      input.Version,
 		Addr:         addr.Ip + ":" + input.Port,
 		LastTime:     time.Now().Unix(),
@@ -35,9 +42,20 @@ func (s *MasterServer) MemberStart(ss *session.Session, input *deal.MemberStartR
 
 	ss.Set(common.MemberNode, newNode)
 
-	s.Mux.Lock()
-	defer s.Mux.Unlock()
 	s.MemberSessions = append(s.MemberSessions, ss)
+
+	// 告知所有server member节点发生变更
+	memberNode := router.GetMasterNode().AllMemberNode()
+	for _, item := range s.ServerSessions {
+		item.Push("MemberNode", &deal.MemberNodePush{
+			Nodes: memberNode,
+		})
+	}
+
+	// 告知当前节点mid
+	ss.Push("MemberMchID", &deal.MemberMchIDPush{
+		MchID: mchID,
+	})
 
 	// 告知当前从节点 当前所有的服务节点信息
 	serverNodes := router.GetMasterNode().AllServerNode()
@@ -63,6 +81,14 @@ func (s *MasterServer) MemberStop(ss *session.Session, input *deal.MemberStopNot
 		}
 	}
 	s.MemberSessions = s.MemberSessions[:index]
+
+	// 告知所有server member节点发生变更
+	memberNode := router.GetMasterNode().AllMemberNode()
+	for _, item := range s.ServerSessions {
+		item.Push("MemberNode", &deal.MemberNodePush{
+			Nodes: memberNode,
+		})
+	}
 
 	return nil
 }
@@ -173,24 +199,5 @@ func (s *MasterServer) ServerHeart(ss *session.Session, input *deal.Ping) error 
 	node.Psutil = input.Psutil
 	return ss.Response("ServerHeart", &deal.Pong{
 		Pong: node.LastTime,
-	})
-}
-
-// member sid
-func (s *MasterServer) MemberGetSid(ss *session.Session, input *deal.MemberGetSidRequest) error {
-	s.Mux.Lock()
-	defer s.Mux.Unlock()
-
-	min := s.MemberSid + 1
-	max := s.MemberSid + common.MemberSidSize
-	s.MemberSid = max
-
-	if max > common.MaxUint64-common.MemberSidSize {
-		s.MemberSid = 0
-	}
-
-	return ss.Response("MemberGetSid", &deal.MemberGetSidResponse{
-		Min: min,
-		Max: max,
 	})
 }

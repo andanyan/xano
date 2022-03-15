@@ -1,6 +1,7 @@
 package member
 
 import (
+	"xano/common"
 	"xano/deal"
 	"xano/router"
 	"xano/session"
@@ -20,7 +21,7 @@ func (m *Service) MemberStart(ss *session.Session, input *deal.MemberStartRespon
 }
 
 // 获取sid
-func (m *Service) MemberGetSid(ss *session.Session, input *deal.MemberGetSidResponse) error {
-	session.GetConnect().AddScope(input.Min, input.Max)
+func (m *Service) MemberMchID(ss *session.Session, input *deal.MemberMchIDPush) error {
+	common.GetCache().Set(common.MchIDKey, input.MchID)
 	return nil
 }

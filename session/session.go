@@ -132,6 +132,40 @@ func (s *Session) Push(route string, input interface{}) error {
 	return nil
 }
 
+// Push To Other Session
+func (s *Session) PushSession(route string, sid uint64, input interface{}) error {
+	memberNode, err := router.GetLocalMemberNode().GetNodeBySid(sid)
+	if err != nil {
+		return err
+	}
+
+	inputBys, err := common.MsgMarsh(common.GetConfig().Base.TcpDeal, input)
+	if err != nil {
+		return err
+	}
+	msg := &deal.Msg{
+		Route:   route,
+		Sid:     sid,
+		Mid:     0,
+		MsgType: common.MsgTypePush,
+		Deal:    common.GetConfig().Base.TcpDeal,
+		Version: common.GetConfig().Base.Version,
+		Data:    inputBys,
+	}
+
+	// 获取连接
+	pool := core.GetPool(memberNode.Addr)
+	cli, err := pool.Get()
+	if err != nil {
+		return err
+	}
+	defer pool.Recycle(cli)
+
+	// 发送消息
+	cli.Client.Send(msg)
+	return nil
+}
+
 // 向连接写入包
 func (s *Session) genMsg(route string, msgType uint32, input interface{}) (*deal.Msg, error) {
 	// 组装包 写入连接即可

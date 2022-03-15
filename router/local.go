@@ -1,5 +1,12 @@
 package router
 
+import (
+	"fmt"
+	"sync"
+	"xano/common"
+	"xano/deal"
+)
+
 // 记录本地路由
 var localRouter *Router
 
@@ -30,4 +37,41 @@ func GetLocalNode() *Node {
 		localNode = NewNode()
 	}
 	return localNode
+}
+
+type LocalMemberNode struct {
+	sync.RWMutex
+	Nodes []*deal.MemberNode
+}
+
+var localMemberNode *LocalMemberNode
+
+func GetLocalMemberNode() *LocalMemberNode {
+	if localMemberNode == nil {
+		localMemberNode = new(LocalMemberNode)
+	}
+	return localMemberNode
+}
+
+func (n *LocalMemberNode) SetNode(nods []*deal.MemberNode) {
+	n.Lock()
+	defer n.Unlock()
+	n.Nodes = nods
+}
+
+func (n *LocalMemberNode) GetNodeBySid(sid uint64) (*deal.MemberNode, error) {
+	if sid <= common.MaxSessionNum {
+		return nil, fmt.Errorf("error sid")
+	}
+	n.RLock()
+	defer n.RUnlock()
+
+	mchId := sid / common.MaxSessionNum
+
+	for _, item := range n.Nodes {
+		if item.MchId == mchId {
+			return item, nil
+		}
+	}
+	return nil, fmt.Errorf("not find machine by sid")
 }

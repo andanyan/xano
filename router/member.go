@@ -10,7 +10,7 @@ func GetMemberRouter() *Router {
 	return memberRouter
 }
 
-// 服务寻址 主要实现地址寻址
+// 网关端服务寻址 主要实现地址寻址
 var memberNode *Node
 
 func GetMemberNode() *Node {

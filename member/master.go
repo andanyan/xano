@@ -60,11 +60,6 @@ func (m *MemberMaster) masterHandle() {
 	// 发起Start通信
 	m.memberStart()
 
-	// 获取sid
-	if !session.GetConnect().IsEnough() {
-		m.memberSid()
-	}
-
 	// 启动心跳
 	for {
 		m.memberHeart()
@@ -152,36 +147,13 @@ func (m *MemberMaster) memberHeart() {
 	GetMemberMaster().memberInfo()
 }
 
-// 发起sid取值
-func (m *MemberMaster) memberSid() {
-	if m.MasterClient == nil {
-		return
-	}
-	input := &deal.MemberGetSidRequest{}
-	inputBys, err := common.MsgMarsh(common.GetConfig().Base.TcpDeal, input)
-	if err != nil {
-		logger.Error(err)
-		return
-	}
-	msg := &deal.Msg{
-		Route:   "MemberGetSid",
-		Sid:     0,
-		Mid:     m.MasterClient.GetMid(),
-		MsgType: common.MsgTypeNotice,
-		Deal:    common.GetConfig().Base.TcpDeal,
-		Data:    inputBys,
-		Version: common.GetConfig().Base.Version,
-	}
-	m.MasterClient.Send(msg)
-}
-
 // 同步session
 func (m *MemberMaster) memberInfo() {
 	if m.MasterClient == nil {
 		return
 	}
 	input := &deal.MemberInfoNotice{
-		SessionCount: session.GetConnect().GetCount(),
+		SessionCount: uint64(session.GetMember().SessionCount()),
 	}
 	inputBys, err := common.MsgMarsh(common.GetConfig().Base.TcpDeal, input)
 	if err != nil {

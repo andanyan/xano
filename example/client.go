@@ -39,6 +39,25 @@ func main() {
 		logger.Infof("%+v", out)
 	})
 
+	// session init
+	input := &deal.SessionInitRequest{}
+	inputBys, err := common.MsgMarsh(common.GetConfig().Base.TcpDeal, input)
+	if err != nil {
+		logger.Error(err)
+		return
+	}
+	inputMsg := &deal.Msg{
+		Route:   "SessionInit",
+		Sid:     0,
+		Mid:     cli.Client.GetMid(),
+		MsgType: common.MsgTypeRequest,
+		Deal:    common.GetConfig().Base.TcpDeal,
+		Version: common.GetConfig().Base.Version,
+		Data:    inputBys,
+	}
+	logger.Debugf("%+v", inputMsg)
+	cli.Client.Send(inputMsg)
+
 	// 等待初始化完成
 	<-c
 

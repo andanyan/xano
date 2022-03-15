@@ -78,7 +78,5 @@ func (n *NetService) Notice(addr string, msg *deal.Msg) error {
 	// 发送消息
 	msg.Mid = cli.Client.GetMid()
 	cli.Client.Send(msg)
-	// 等待一会儿再回收
-	time.Sleep(common.DelayDuration)
 	return nil
 }
