@@ -47,21 +47,20 @@ func (s *Server) runTcp() {
 }
 
 func (s *Server) tcpHandle(h *core.TcpHandle, msg *deal.Msg) {
+	logger.Infof("%+v", msg)
+
 	// 解析packet
 	var err error
 
 	switch msg.MsgType {
 	case common.MsgTypeNotice, common.MsgTypeRequest:
 		// 创建session 提供给接口端使用
-		ss := session.GetSession(h)
-		ss.SID = msg.Sid
+		ss := session.GetServerSession(h)
+		ss.SetSid(msg.Sid)
 		// 调用路由
 		if err = ss.HandleRoute(router.GetLocalRouter(), msg); err != nil {
 			logger.Error(err.Error())
 		}
-
-	case common.MsgTypePush:
-		h.Send(msg)
 
 	default:
 

@@ -90,7 +90,7 @@ import (
 
 type B struct{}
 
-func (b *B) Div(s *session.Session, input *pb.DivRequest) error {
+func (b *B) Div(s session.Session, input *pb.DivRequest) error {
 	addRes := new(pb.AddResponse)
 	err := s.Rpc("Add", &pb.AddRequest{
 		Args: []int64{input.A, input.B},

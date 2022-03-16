@@ -11,7 +11,7 @@ import (
 
 type A struct{}
 
-func (a *A) Add(s *session.Session, input *pb.AddRequest) error {
+func (a *A) Add(s session.Session, input *pb.AddRequest) error {
 	var res int64
 	for _, val := range input.Args {
 		res += val
@@ -23,7 +23,7 @@ func (a *A) Add(s *session.Session, input *pb.AddRequest) error {
 
 type B struct{}
 
-func (b *B) Div(s *session.Session, input *pb.DivRequest) error {
+func (b *B) Div(s session.Session, input *pb.DivRequest) error {
 	addRes := new(pb.AddResponse)
 	err := s.Rpc("Add", &pb.AddRequest{
 		Args: []int64{input.A, input.B},

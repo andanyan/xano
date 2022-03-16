@@ -8,5 +8,5 @@ sid, route, input
 
 
 计划
-1、member session初始化触发交给客户端来做。
+1、rpc有问题
 2、member支持http服务

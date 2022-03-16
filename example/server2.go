@@ -10,7 +10,7 @@ import (
 
 type B struct{}
 
-func (b *B) Div(s *session.Session, input *pb.DivRequest) error {
+func (b *B) Div(s session.Session, input *pb.DivRequest) error {
 	addRes := new(pb.AddResponse)
 	err := s.Rpc("Add", &pb.AddRequest{
 		Args: []int64{input.A, input.B},
@@ -21,7 +21,7 @@ func (b *B) Div(s *session.Session, input *pb.DivRequest) error {
 	}
 
 	res := addRes.Result * (input.B - input.A)
-
+	logger.Info("div res: ", res)
 	return s.Response("Div", &pb.DivResponse{
 		Result: res,
 	})

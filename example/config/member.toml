@@ -1,15 +1,29 @@
+#基础配置
 [base]
+#版本号
 version = "1.0.0"
-TcpDeal = 2
+#协议类型 1-protobuf 2-json
+TcpDeal = 1
 
-[server]
-tcpAddr = ""
-masterAddr = ""
+#网关节点
+[Member]
+# 服务启动地址
+tcpAddr = ":10000"
+# 内部交互地址
+innerAddr = ":10001"
+# 主节点访问地址
+masterAddr = ":20000"
 
+#主节点
 [Master]
+# 主节点服务启动地址
 tcpAddr = ""
+# http服务，对外提供节点信息访问
 httpAddr = ""
 
-[Member]
-tcpAddr = ":12000"
-masterAddr = ":11000"
+#服务节点
+[server]
+# 本节点服务启动地址
+tcpAddr = ""
+# 主节点访问地址
+masterAddr = ""

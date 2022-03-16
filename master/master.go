@@ -53,8 +53,8 @@ func (m *Master) runTcp() {
 }
 
 func (m *Master) tcpHandle(h *core.TcpHandle, msg *deal.Msg) {
-	ss := session.GetSession(h)
-	ss.SID = msg.Sid
+	ss := session.GetBaseSession(h)
+	logger.Debugf("%+v", msg)
 	if err := ss.HandleRoute(router.GetMasterRouter(), msg); err != nil {
 		logger.Error(err.Error())
 	}

@@ -56,7 +56,7 @@ const (
 	MemberNode       string = "MemberNode"
 	ServerNode       string = "ServerNode"
 	MchIDKey         string = "MchID"
-	SessionInitKey   string = "SessionInit"
+	SessionIDKey     string = "SessionID"
 )
 
 // 一些数值

@@ -2,7 +2,6 @@ package core
 
 import (
 	"net"
-	"strings"
 	"sync"
 	"sync/atomic"
 	"xano/common"
@@ -69,11 +68,8 @@ func (h *TcpHandle) Close() {
 // 包入列
 func (h *TcpHandle) Send(msg *deal.Msg) {
 	if !h.status {
-		logger.Error("TCP IS DISCONNECT")
+		logger.Warn("TCP IS DISCONNECT")
 		return
-	}
-	if !strings.HasSuffix(msg.Route, "Heart") {
-		logger.Infof("RECEIVE SID: %d, Route: %s, Mid: %d, MsgType: %d, Deal: %d, Data: %s", msg.Sid, msg.Route, msg.Mid, msg.MsgType, msg.Deal, msg.Data)
 	}
 	msgBys, err := common.MsgMarsh(common.GetConfig().Base.TcpDeal, msg)
 	if err != nil {
@@ -160,9 +156,6 @@ func (h *TcpHandle) runRead() {
 				logger.Error(err.Error())
 				continue
 			}
-			if !strings.HasSuffix(msg.Route, "Heart") {
-				logger.Infof("RECEIVE SID: %d, Route: %s, Mid: %d, MsgType: %d, Deal: %d, Data: %s", msg.Sid, msg.Route, msg.Mid, msg.MsgType, msg.Deal, msg.Data)
-			}
 			// 消息id序号校验
 			mmid := h.Get(common.HandleKeyMid)
 			var nmmid uint64 = 0
@@ -174,6 +167,7 @@ func (h *TcpHandle) runRead() {
 			}
 			if nmmid != msg.Mid-1 {
 				logger.Error("Fatal MsgId: ", nmmid, msg.Mid)
+				return
 			}
 
 			// 设置当前消息id

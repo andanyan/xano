@@ -8,9 +8,9 @@ option go_package = "../deal";
 // repeated optional required
 // protoc 3.19.2
 // protoc --proto_path=. --go_out=. *.proto
-// protoc-go-inject-tag --input=*.pb.go 
+// protoc-go-inject-tag --input=*.pb.go
 
-// 包消息
+// 消息
 message Msg {
     // 通信SessionId
     uint64 Sid = 1;
@@ -44,6 +44,7 @@ message MemberNode {
     int64 LastTime = 4;
     uint64 SessionCount = 5;
     Psutil Psutil = 6;
+    string InnerAddr = 7;
 }
 
 // server node
@@ -61,10 +62,12 @@ message MemberStartRequest {
     string Version = 1;
     // 端口
     string Port = 2;
+    // inner port
+    string InnerPort = 3;
 }
 
 message MemberStartResponse {
-    repeated ServerNode Nodes = 1;
+    repeated ServerNode Node = 1;
 }
 
 // 路由关闭
@@ -85,7 +88,7 @@ message ServerStartRequest {
 }
 
 message ServerStartResponse {
-    repeated ServerNode nodes = 1;
+    repeated MemberNode node = 1;
 }
 
 // 服务节点关闭
@@ -93,21 +96,21 @@ message ServerStopNotice {}
 
 
 // 所有服务节点返回
-message ServerNodesRequest {}
+message ServerNodeRequest {}
 
-message ServerNodesResponse {
-    repeated ServerNode nodes = 1;
+message ServerNodeResponse {
+    repeated ServerNode node = 1;
 }
 
 // 所有服务节点返回
-message MemberNodesRequest {}
+message MemberNodeRequest {}
 
-message MemberNodesResponse {
-    repeated MemberNode nodes = 1;
+message MemberNodeResponse {
+    repeated MemberNode Node = 1;
 }
 
 message MemberNodePush {
-    repeated MemberNode nodes = 1;
+    repeated MemberNode Node = 1;
 }
 
 message MemberInfoNotice {

@@ -29,16 +29,6 @@ func GetGateRouter() *Router {
 	return gateRouter
 }
 
-// 节点信息
-var localNode *Node
-
-func GetLocalNode() *Node {
-	if localNode == nil {
-		localNode = NewNode()
-	}
-	return localNode
-}
-
 type LocalMemberNode struct {
 	sync.RWMutex
 	Nodes []*deal.MemberNode
@@ -60,8 +50,8 @@ func (n *LocalMemberNode) SetNode(nods []*deal.MemberNode) {
 }
 
 func (n *LocalMemberNode) GetNodeBySid(sid uint64) (*deal.MemberNode, error) {
-	if sid <= common.MaxSessionNum {
-		return nil, fmt.Errorf("error sid")
+	if sid == 0 {
+		return nil, fmt.Errorf("INVAILD SID")
 	}
 	n.RLock()
 	defer n.RUnlock()

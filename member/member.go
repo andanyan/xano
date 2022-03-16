@@ -32,6 +32,9 @@ func (m *Member) Run() {
 
 	// 启动tcp服务
 	go m.runTcp()
+
+	// 启动内部访问地址
+	go m.innerTcp()
 }
 
 // 运行tcp
@@ -44,7 +47,7 @@ func (m *Member) runTcp() {
 	core.NewTcpServer(addr, func(h *core.TcpHandle) {
 		h.SetHandleFunc(m.tcpHandle)
 	}, func(h *core.TcpHandle) {
-		//h.SetInitFunc(m.tcpInit)
+		h.SetInitFunc(m.tcpInit)
 	}, func(h *core.TcpHandle) {
 		h.SetCloseFunc(m.tcpClose)
 	})
@@ -52,87 +55,98 @@ func (m *Member) runTcp() {
 
 // 转发逻辑
 func (m *Member) tcpHandle(h *core.TcpHandle, msg *deal.Msg) {
-	// 获取当前session
-	ss := session.GetSession(h)
-	sid := ss.GetSid()
-	// 如果mid为0,sid不为0且和当前不等,消息类型为推送 意味着是内部转发包
-	if msg.Mid == 0 && msg.Sid > 0 && msg.Sid != sid && msg.MsgType == common.MsgTypePush {
-		ss := session.GetMember().SessionFindByID(msg.Sid)
-		msg.Mid = ss.GetMid()
-		ss.Send(msg)
-		return
-	}
-
-	// 如果是客户端初始化请求
-	if msg.Route == common.SessionInitKey {
-		// session初始化
-		m.tcpInit(h)
-	}
-
-	// 赋值Sid
-	msg.Sid = sid
-
-	// 正常客户端消息处理
+	logger.Infof("%+v", msg)
 	switch msg.MsgType {
-	case common.MsgTypeRequest:
-		// 从连接池中拿到连接转发出去即可，拿到response之后释放连接
-		tcpAddr := router.GetMemberNode().GetNodeRand(msg.Route)
+	case common.MsgTypeRequest, common.MsgTypeNotice:
+		ss := session.GetMemberSession(h)
+		sid := ss.GetSid()
+		tcpAddr := router.GetMemberServerNode().GetNodeRand(msg.Route)
 		if tcpAddr == "" {
 			logger.Errorf("not found server: %s#%s", msg.Version, msg.Route)
 			return
 		}
-		net := session.NewNetService()
-		resMsgs, err := net.Request(tcpAddr, msg)
-		if err != nil {
-			logger.Error(err)
-			return
-		}
-		// 所有包全部返回
-		for _, item := range resMsgs {
-			item.Mid = h.GetMid()
-			h.Send(item)
-		}
-
-	case common.MsgTypeNotice:
-		// 从连接池中拿到连接转发出去即可，拿到response之后释放连接
-		tcpAddr := router.GetMemberNode().GetNodeRand(msg.Route)
-		if tcpAddr == "" {
-			logger.Errorf("not found server: %s#%s", msg.Version, msg.Route)
-			return
-		}
-		net := session.NewNetService()
-		err := net.Notice(tcpAddr, msg)
-		if err != nil {
-			logger.Error(err)
-			return
-		}
-
-	default:
-		// 搞不清楚的全部发回客户端
-		msg.Mid = h.GetMid()
-		h.Send(msg)
+		msg.Sid = sid
+		ss.SendTo(tcpAddr, msg)
 	}
 }
 
 // 初始逻辑
 func (m *Member) tcpInit(h *core.TcpHandle) {
-	ss := session.GetSession(h)
-	sid := ss.GetSid()
-	if sid > 0 {
+	ss := session.GetMemberSession(h)
+	err := session.GetMember().SesssionInit(ss)
+	if err != nil {
+		logger.Error(err)
+		ss.Close()
 		return
 	}
-	session.GetMember().SesssionInit(ss)
 	GetMemberMaster().memberInfo()
-	ss.Response("SessionInit", &deal.SessionInitResponse{
-		Sid: sid,
-	})
-	logger.Debug("tcp session init: ", sid)
+	logger.Debug("tcp session init: ", ss.GetSid())
 }
 
 // 关闭逻辑
 func (m *Member) tcpClose(h *core.TcpHandle) {
-	ss := session.GetSession(h)
+	ss := session.GetMemberSession(h)
 	session.GetMember().SessionClose(ss)
 	GetMemberMaster().memberInfo()
 	logger.Debug("tcp session close: ", ss.GetSid())
+}
+
+// **********************************
+// 内部tcp
+// **********************************
+// 运行tcp
+func (m *Member) innerTcp() {
+	addr := common.GetConfig().Member.InnerAddr
+	if addr == "" {
+		return
+	}
+	logger.Infof("Gate Member Inner TCP Server Start: %s", addr)
+	core.NewTcpServer(addr, func(h *core.TcpHandle) {
+		h.SetHandleFunc(m.innerHandle)
+	})
+}
+
+// 转发逻辑
+func (m *Member) innerHandle(h *core.TcpHandle, msg *deal.Msg) {
+	logger.Debugf("Inner %+v", msg)
+	sid := msg.Sid
+	if sid <= 0 {
+		logger.Warnf("No Session Msg: %+v", msg)
+		return
+	}
+	switch msg.MsgType {
+	case common.MsgTypeRequest:
+		// 同步请求 用于rpc
+		ss := session.GetMember().SessionFindByID(sid)
+		if ss == nil {
+			logger.Errorf("Session Invaild: %d", sid)
+			return
+		}
+		err := ss.RpcRequest(session.GetBaseSession(h), msg)
+		if err != nil {
+			logger.Error(err)
+		}
+
+	case common.MsgTypeNotice:
+		// notice请求 用于事件通知
+		ss := session.GetMember().SessionFindByID(sid)
+		if ss == nil {
+			logger.Errorf("Session Invaild: %d", sid)
+			return
+		}
+		tcpAddr := router.GetMemberServerNode().GetNodeRand(msg.Route)
+		if tcpAddr == "" {
+			logger.Errorf("not found server: %s#%s", msg.Version, msg.Route)
+			return
+		}
+		ss.SendTo(tcpAddr, msg)
+	case common.MsgTypeResponse, common.MsgTypePush:
+		ss := session.GetMember().SessionFindByID(sid)
+		if ss == nil {
+			logger.Errorf("Session Invaild: %d", sid)
+			return
+		}
+		msg.Mid = ss.GetMid()
+		ss.Send(msg)
+	}
 }

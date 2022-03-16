@@ -42,8 +42,7 @@ func (m *MemberMaster) masterHandle() {
 	}
 	defer cli.Close()
 	cli.SetHandleFunc(func(h *core.TcpHandle, m *deal.Msg) {
-		ss := session.GetSession(h)
-		ss.SID = m.Sid
+		ss := session.GetBaseSession(h)
 		if err := ss.HandleRoute(router.GetMemberRouter(), m); err != nil {
 			logger.Error(err.Error())
 		}
@@ -76,9 +75,14 @@ func (m *MemberMaster) memberStart() {
 	if err != nil {
 		logger.Fatal(err)
 	}
+	innerAddr, err := common.ParseAddr(common.GetConfig().Member.InnerAddr)
+	if err != nil {
+		logger.Fatal(err)
+	}
 	input := &deal.MemberStartRequest{
-		Version: common.GetConfig().Base.Version,
-		Port:    memberAddr.Port,
+		Version:   common.GetConfig().Base.Version,
+		Port:      memberAddr.Port,
+		InnerPort: innerAddr.Port,
 	}
 	inputBys, err := common.MsgMarsh(common.GetConfig().Base.TcpDeal, input)
 	if err != nil {

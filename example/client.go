@@ -15,21 +15,16 @@ func main() {
 
 	var sid uint64 = 0
 
-	pool := core.GetPool("0.0.0.0:12000")
+	pool := core.GetPool("0.0.0.0:10000")
 	cli, err := pool.Get()
 	if err != nil {
 		logger.Fatal(err)
 	}
+	defer pool.Recycle(cli)
 
 	c := make(chan struct{})
 
 	cli.Client.SetHandleFunc(func(h *core.TcpHandle, m *deal.Msg) {
-		if m.Route == "SessionInit" {
-			sid = m.Sid
-			logger.Infof("%+v", m)
-			c <- struct{}{}
-			return
-		}
 		out := new(pb.DivResponse)
 		err := common.MsgUnMarsh(m.Deal, m.Data, out)
 		if err != nil {
@@ -38,28 +33,6 @@ func main() {
 		}
 		logger.Infof("%+v", out)
 	})
-
-	// session init
-	input := &deal.SessionInitRequest{}
-	inputBys, err := common.MsgMarsh(common.GetConfig().Base.TcpDeal, input)
-	if err != nil {
-		logger.Error(err)
-		return
-	}
-	inputMsg := &deal.Msg{
-		Route:   "SessionInit",
-		Sid:     0,
-		Mid:     cli.Client.GetMid(),
-		MsgType: common.MsgTypeRequest,
-		Deal:    common.GetConfig().Base.TcpDeal,
-		Version: common.GetConfig().Base.Version,
-		Data:    inputBys,
-	}
-	logger.Debugf("%+v", inputMsg)
-	cli.Client.Send(inputMsg)
-
-	// 等待初始化完成
-	<-c
 
 	var i int64
 	for {
@@ -83,7 +56,7 @@ func main() {
 		logger.Debugf("%+v", inputMsg)
 		cli.Client.Send(inputMsg)
 		i++
-		time.Sleep(1000 * time.Millisecond)
+		time.Sleep(100 * time.Millisecond)
 	}
 
 	<-c

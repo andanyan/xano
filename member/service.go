@@ -10,18 +10,18 @@ import (
 type Service struct{}
 
 // 心跳返回
-func (m *Service) MemberHeart(ss *session.Session, input *deal.Ping) error {
+func (m *Service) MemberHeart(ss session.Session, input *deal.Ping) error {
 	return nil
 }
 
 // 启动回包
-func (m *Service) MemberStart(ss *session.Session, input *deal.MemberStartResponse) error {
-	router.GetMemberNode().SetNode(input.Nodes)
+func (m *Service) MemberStart(ss session.Session, input *deal.MemberStartResponse) error {
+	router.GetMemberServerNode().SetNode(input.Node)
 	return nil
 }
 
 // 获取sid
-func (m *Service) MemberMchID(ss *session.Session, input *deal.MemberMchIDPush) error {
+func (m *Service) MemberMchID(ss session.Session, input *deal.MemberMchIDPush) error {
 	common.GetCache().Set(common.MchIDKey, input.MchID)
 	return nil
 }

@@ -62,8 +62,10 @@ type Master struct {
 }
 
 type Member struct {
-	// tcp地址
+	// tcp对外地址
 	TcpAddr string
+	// tcp对内地址
+	InnerAddr string
 	// 主节点地址
 	MasterAddr string
 }

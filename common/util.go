@@ -24,6 +24,18 @@ func GetPsutil() *deal.Psutil {
 	c, _ := cpu.Info()
 	cp, _ := cpu.Percent(0, true)
 	h, _ := host.Info()
+
+	var cpuCores int32 = 0
+	cpuModelName := ""
+	var cpuUsePercent float64 = 0
+	if len(c) > 0 {
+		cpuCores = c[0].Cores
+		cpuModelName = c[0].ModelName
+	}
+	if len(cp) > 0 {
+		cpuUsePercent = cp[0]
+	}
+
 	return &deal.Psutil{
 		MemTotal:      m.Total,
 		MemAvailable:  m.Available,
@@ -31,9 +43,9 @@ func GetPsutil() *deal.Psutil {
 		MemUsePercent: m.UsedPercent,
 		MemFree:       m.Free,
 		// cpu
-		CpuCores:      c[0].Cores,
-		CpuModelName:  c[0].ModelName,
-		CpuUsePercent: cp[0],
+		CpuCores:      cpuCores,
+		CpuModelName:  cpuModelName,
+		CpuUsePercent: cpuUsePercent,
 		// host
 		HostName:      h.Hostname,
 		HostBoostTime: h.BootTime,

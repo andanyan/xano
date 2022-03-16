@@ -39,8 +39,7 @@ func (s *ServerMaster) masterHandle() {
 
 	// 设置回包函数
 	t.SetHandleFunc(func(h *core.TcpHandle, m *deal.Msg) {
-		ss := session.GetSession(h)
-		ss.SID = m.Sid
+		ss := session.GetBaseSession(h)
 		router := router.GetGateRouter()
 		if err := ss.HandleRoute(router, m); err != nil {
 			logger.Error(err.Error())

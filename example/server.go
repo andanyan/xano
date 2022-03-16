@@ -3,26 +3,18 @@ package main
 import (
 	"xano"
 	"xano/example/pb"
-	"xano/logger"
 	"xano/router"
 	"xano/session"
 )
 
-type B struct{}
+type A struct{}
 
-func (b *B) Div(s *session.Session, input *pb.DivRequest) error {
-	addRes := new(pb.AddResponse)
-	err := s.Rpc("Add", &pb.AddRequest{
-		Args: []int64{input.A, input.B},
-	}, addRes)
-	if err != nil {
-		logger.Error(err)
-		return err
+func (a *A) Add(s session.Session, input *pb.AddRequest) error {
+	var res int64
+	for _, item := range input.Args {
+		res += item
 	}
-
-	res := addRes.Result * (input.B - input.A)
-
-	return s.Response("Div", &pb.DivResponse{
+	return s.RpcResponse("Add", &pb.AddResponse{
 		Result: res,
 	})
 }
@@ -32,7 +24,7 @@ func main() {
 
 	xano.WithRoute(&router.RouterServer{
 		Name:   "",
-		Server: new(B),
+		Server: new(A),
 	})
 
 	xano.Run()
