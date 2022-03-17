@@ -107,7 +107,8 @@ func (s *MemberSession) HandleRoute(r *router.Router, m *deal.Msg) error {
 		return err
 	}
 	common.PrintMsg(m, input)
-
+	// 缓存最后一次协议类型
+	s.Set(common.MessageDeal, m.Deal)
 	// 调用函数
 	arg := []reflect.Value{reflect.ValueOf(s), reflect.ValueOf(input)}
 	res := route.Method.Call(arg)
@@ -123,7 +124,7 @@ func (s *MemberSession) HandleRoute(r *router.Router, m *deal.Msg) error {
 
 // rpc 请求
 func (s *MemberSession) RpcRequest(ss *BaseSession, msg *deal.Msg) error {
-	tcpAddr := router.GetMemberServerNode().GetNodeRand(msg.Route)
+	tcpAddr := router.GetMemberServerNode().GetNodeRand(msg.Version, msg.Route)
 	if tcpAddr == "" {
 		return fmt.Errorf("not found server: %s#%s", msg.Version, msg.Route)
 	}
@@ -160,7 +161,7 @@ func (s *MemberSession) RpcRequest(ss *BaseSession, msg *deal.Msg) error {
 
 // notice 请求
 func (s *MemberSession) Notice(route string, input interface{}) error {
-	tcpAddr := router.GetMemberServerNode().GetNodeRand(route)
+	tcpAddr := router.GetMemberServerNode().GetNodeRand("", route)
 	if tcpAddr == "" {
 		logger.Warnf("not found server: %s", route)
 		return nil
@@ -176,7 +177,7 @@ func (s *MemberSession) Notice(route string, input interface{}) error {
 		MsgType: common.MsgTypePush,
 		Deal:    common.GetConfig().Base.TcpDeal,
 		Data:    inputBys,
-		Version: common.GetConfig().Base.Version,
+		Version: "",
 	}
 
 	err = s.SendTo(tcpAddr, inputMsg)

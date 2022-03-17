@@ -37,6 +37,9 @@ func (s *MasterSession) HandleRoute(r *router.Router, m *deal.Msg) error {
 
 	common.PrintMsg(m, input)
 
+	// 缓存最后一次协议类型
+	s.Set(common.MessageDeal, m.Deal)
+
 	// 调用函数
 	arg := []reflect.Value{reflect.ValueOf(s), reflect.ValueOf(input)}
 	res := route.Method.Call(arg)

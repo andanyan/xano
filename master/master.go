@@ -1,7 +1,6 @@
 package master
 
 import (
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -22,6 +21,20 @@ func NewMaster() *Master {
 }
 
 func (m *Master) Run() {
+
+	go m.runTcp()
+	go m.runHttp()
+}
+
+func (m *Master) Close() {
+}
+
+func (m *Master) runTcp() {
+	addr := common.GetConfig().Master.TcpAddr
+	if addr == "" {
+		return
+	}
+
 	// 注册主节点函数
 	router.GetMasterRouter().Register(&router.RouterServer{
 		Name:   "",
@@ -31,19 +44,6 @@ func (m *Master) Run() {
 		Name:   "",
 		Server: new(MasterHttpServer),
 	})
-	go m.runTcp()
-	go m.runHttp()
-}
-
-func (m *Master) Close() {
-
-}
-
-func (m *Master) runTcp() {
-	addr := common.GetConfig().Master.TcpAddr
-	if addr == "" {
-		return
-	}
 
 	// 启动服务
 	logger.Infof("Gate Master Tcp Start: %s", addr)
@@ -64,6 +64,11 @@ func (m *Master) runHttp() {
 	if addr == "" {
 		return
 	}
+
+	router.GetMasterHttpRouter().Register(&router.RouterServer{
+		Name:   "",
+		Server: new(MasterHttpServer),
+	})
 
 	httpMux := http.NewServeMux()
 	httpMux.HandleFunc("/", m.httpHandle)
@@ -92,16 +97,9 @@ func (m *Master) httpHandle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// 先判断是否有这个路由 如果没有 直接返回
-	route := router.GetMasterRouter().GetRoute(routeName)
-	if route == nil {
+	if router.GetMasterHttpRouter().GetRoute(routeName) == nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
-	}
-
-	// 协议处理 默认json
-	d := common.TcpDealJson
-	if r.Header.Get("Deal") == fmt.Sprintf("%d", common.TcpDealProtobuf) {
-		d = common.TcpDealProtobuf
 	}
 
 	// 请求数据获取
@@ -112,8 +110,8 @@ func (m *Master) httpHandle(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-
-	if d == common.TcpDealJson && len(body) == 0 {
+	// http 仅支持json
+	if len(body) == 0 {
 		body = []byte("{}")
 	}
 
@@ -145,7 +143,7 @@ func (m *Master) httpHandle(w http.ResponseWriter, r *http.Request) {
 		Sid:     0,
 		Mid:     cli.Client.GetMid(),
 		MsgType: common.MsgTypeRequest,
-		Deal:    d,
+		Deal:    common.TcpDealJson,
 		Data:    body,
 		Version: common.GetConfig().Base.Version,
 	}
@@ -156,8 +154,8 @@ func (m *Master) httpHandle(w http.ResponseWriter, r *http.Request) {
 	select {
 	case <-c:
 		w.Header().Add("Content-Type", "text/plain")
+		//w.WriteHeader(http.StatusOK)
 	case <-t.C:
 		w.WriteHeader(http.StatusRequestTimeout)
 	}
-
 }

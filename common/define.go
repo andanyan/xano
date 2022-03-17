@@ -57,6 +57,7 @@ const (
 	ServerNode       string = "ServerNode"
 	MchIDKey         string = "MchID"
 	SessionIDKey     string = "SessionID"
+	MessageDeal      string = "MessageDeal"
 )
 
 // 一些数值

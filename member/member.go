@@ -60,7 +60,7 @@ func (m *Member) tcpHandle(h *core.TcpHandle, msg *deal.Msg) {
 	case common.MsgTypeRequest, common.MsgTypeNotice:
 		ss := session.GetMemberSession(h)
 		sid := ss.GetSid()
-		tcpAddr := router.GetMemberServerNode().GetNodeRand(msg.Route)
+		tcpAddr := router.GetMemberServerNode().GetNodeRand(msg.Version, msg.Route)
 		if tcpAddr == "" {
 			logger.Errorf("not found server: %s#%s", msg.Version, msg.Route)
 			return
@@ -139,7 +139,7 @@ func (m *Member) innerHandle(h *core.TcpHandle, msg *deal.Msg) {
 			logger.Errorf("Session Invaild: %d", sid)
 			return
 		}
-		tcpAddr := router.GetMemberServerNode().GetNodeRand(msg.Route)
+		tcpAddr := router.GetMemberServerNode().GetNodeRand(msg.Version, msg.Route)
 		if tcpAddr == "" {
 			logger.Errorf("not found server: %s#%s", msg.Version, msg.Route)
 			return

@@ -15,6 +15,16 @@ type Session interface {
 	// cache
 	Set(k string, v interface{})
 	Get(k string) interface{}
+	Del(k string)
+	GetInt(k string) int
+	GetUInt(k string) uint
+	GetInt32(k string) int32
+	GetUInt32(k string) uint32
+	GetInt64(k string) int64
+	GetUInt64(k string) uint64
+	GetFloat(k string) float64
+	GetBool(k string) bool
+	GetString(k string) string
 
 	// session id
 	SetSid(sid uint64)

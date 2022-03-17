@@ -12,11 +12,15 @@ type Cache struct {
 
 var cache *Cache
 
+func NewCache() *Cache {
+	return &Cache{
+		Values: make(map[string]interface{}),
+	}
+}
+
 func GetCache() *Cache {
 	if cache == nil {
-		cache = &Cache{
-			Values: make(map[string]interface{}),
-		}
+		cache = NewCache()
 	}
 	return cache
 }
@@ -35,6 +39,13 @@ func (c *Cache) Get(k string) interface{} {
 	return c.Values[k]
 }
 
+// 删除缓存
+func (c *Cache) Del(k string) {
+	c.Lock()
+	defer c.Unlock()
+	delete(c.Values, k)
+}
+
 // 获取int
 func (c *Cache) GetInt(k string) int {
 	c.RLock()
@@ -45,6 +56,54 @@ func (c *Cache) GetInt(k string) int {
 		return 0
 	}
 	res, ok := v.(int)
+	if !ok {
+		return 0
+	}
+	return res
+}
+
+// 获取int
+func (c *Cache) GetUInt(k string) uint {
+	c.RLock()
+	defer c.RUnlock()
+
+	v := c.Values[k]
+	if v == nil {
+		return 0
+	}
+	res, ok := v.(uint)
+	if !ok {
+		return 0
+	}
+	return res
+}
+
+// 获取int32
+func (c *Cache) GetInt32(k string) int32 {
+	c.RLock()
+	defer c.RUnlock()
+
+	v := c.Values[k]
+	if v == nil {
+		return 0
+	}
+	res, ok := v.(int32)
+	if !ok {
+		return 0
+	}
+	return res
+}
+
+// 获取int32
+func (c *Cache) GetUInt32(k string) uint32 {
+	c.RLock()
+	defer c.RUnlock()
+
+	v := c.Values[k]
+	if v == nil {
+		return 0
+	}
+	res, ok := v.(uint32)
 	if !ok {
 		return 0
 	}

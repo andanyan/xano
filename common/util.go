@@ -1,6 +1,8 @@
 package common
 
 import (
+	"strconv"
+	"strings"
 	"xano/deal"
 
 	"github.com/shirou/gopsutil/v3/cpu"
@@ -53,4 +55,23 @@ func GetPsutil() *deal.Psutil {
 		HostPlatform:  h.Platform,
 	}
 
+}
+
+// version compare
+func VersionCompare(v1, v2 string) bool {
+	arr1 := strings.Split(v1, ".")
+	arr2 := strings.Split(v2, ".")
+	len1 := len(arr1)
+	len2 := len(arr2)
+	if len1 != len2 {
+		return len1 > len2
+	}
+	for i := 0; i < len1; i++ {
+		t1, _ := strconv.Atoi(arr1[i])
+		t2, _ := strconv.Atoi(arr2[i])
+		if t1 != t2 {
+			return t1 > t2
+		}
+	}
+	return false
 }

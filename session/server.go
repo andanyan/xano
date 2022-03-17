@@ -27,7 +27,7 @@ func (s *ServerSession) Rpc(route string, input, output interface{}) error {
 	}
 
 	// 组装消息
-	inputBys, err := common.MsgMarsh(common.GetConfig().Base.TcpDeal, input)
+	inputBys, err := common.MsgMarsh(s.GetUInt32(common.MessageDeal), input)
 	if err != nil {
 		return err
 	}
@@ -36,7 +36,7 @@ func (s *ServerSession) Rpc(route string, input, output interface{}) error {
 		Sid:     s.GetSid(),
 		Mid:     0, //会在下个环节重新赋值
 		MsgType: common.MsgTypeRequest,
-		Deal:    common.GetConfig().Base.TcpDeal,
+		Deal:    s.GetUInt32(common.MessageDeal),
 		Version: common.GetConfig().Base.Version,
 		Data:    inputBys,
 	}
@@ -59,7 +59,7 @@ func (s *ServerSession) Rpc(route string, input, output interface{}) error {
 	c := make(chan struct{})
 	cli.Client.SetHandleFunc(func(h *core.TcpHandle, m *deal.Msg) {
 		if m.MsgType == common.MsgTypeResponse {
-			err := common.MsgUnMarsh(common.GetConfig().Base.TcpDeal, m.Data, output)
+			err := common.MsgUnMarsh(m.Deal, m.Data, output)
 			if err != nil {
 				logger.Error(err)
 			}
@@ -88,7 +88,7 @@ func (s *ServerSession) Rpc(route string, input, output interface{}) error {
 
 func (s *ServerSession) Notice(route string, input interface{}) error {
 	// 组装消息
-	inputBys, err := common.MsgMarsh(common.GetConfig().Base.TcpDeal, input)
+	inputBys, err := common.MsgMarsh(s.GetUInt32(common.MessageDeal), input)
 	if err != nil {
 		return err
 	}
@@ -97,7 +97,7 @@ func (s *ServerSession) Notice(route string, input interface{}) error {
 		Sid:     s.GetSid(),
 		Mid:     0, //会在下个环节重新赋值
 		MsgType: common.MsgTypeNotice,
-		Deal:    common.GetConfig().Base.TcpDeal,
+		Deal:    s.GetUInt32(common.MessageDeal),
 		Version: common.GetConfig().Base.Version,
 		Data:    inputBys,
 	}
@@ -120,7 +120,7 @@ func (s *ServerSession) Notice(route string, input interface{}) error {
 
 func (s *ServerSession) Response(route string, input interface{}) error {
 	// 组装消息
-	inputBys, err := common.MsgMarsh(common.GetConfig().Base.TcpDeal, input)
+	inputBys, err := common.MsgMarsh(s.GetUInt32(common.MessageDeal), input)
 	if err != nil {
 		return err
 	}
@@ -129,7 +129,7 @@ func (s *ServerSession) Response(route string, input interface{}) error {
 		Sid:     s.GetSid(),
 		Mid:     0, //会在下个环节重新赋值
 		MsgType: common.MsgTypeResponse,
-		Deal:    common.GetConfig().Base.TcpDeal,
+		Deal:    s.GetUInt32(common.MessageDeal),
 		Version: common.GetConfig().Base.Version,
 		Data:    inputBys,
 	}
@@ -152,7 +152,7 @@ func (s *ServerSession) Response(route string, input interface{}) error {
 
 func (s *ServerSession) RpcResponse(route string, input interface{}) error {
 	// 组装消息
-	inputBys, err := common.MsgMarsh(common.GetConfig().Base.TcpDeal, input)
+	inputBys, err := common.MsgMarsh(s.GetUInt32(common.MessageDeal), input)
 	if err != nil {
 		return err
 	}
@@ -161,7 +161,7 @@ func (s *ServerSession) RpcResponse(route string, input interface{}) error {
 		Sid:     s.GetSid(),
 		Mid:     s.GetMid(), //会在下个环节重新赋值
 		MsgType: common.MsgTypeResponse,
-		Deal:    common.GetConfig().Base.TcpDeal,
+		Deal:    s.GetUInt32(common.MessageDeal),
 		Version: common.GetConfig().Base.Version,
 		Data:    inputBys,
 	}
@@ -174,7 +174,7 @@ func (s *ServerSession) RpcResponse(route string, input interface{}) error {
 
 func (s *ServerSession) Push(route string, input interface{}) error {
 	// 组装消息
-	inputBys, err := common.MsgMarsh(common.GetConfig().Base.TcpDeal, input)
+	inputBys, err := common.MsgMarsh(s.GetUInt32(common.MessageDeal), input)
 	if err != nil {
 		return err
 	}
@@ -183,7 +183,7 @@ func (s *ServerSession) Push(route string, input interface{}) error {
 		Sid:     s.GetSid(),
 		Mid:     0,
 		MsgType: common.MsgTypePush,
-		Deal:    common.GetConfig().Base.TcpDeal,
+		Deal:    s.GetUInt32(common.MessageDeal),
 		Version: common.GetConfig().Base.Version,
 		Data:    inputBys,
 	}
@@ -206,7 +206,7 @@ func (s *ServerSession) Push(route string, input interface{}) error {
 
 func (s *ServerSession) PushTo(sid uint64, route string, input interface{}) error {
 	// 组装消息
-	inputBys, err := common.MsgMarsh(common.GetConfig().Base.TcpDeal, input)
+	inputBys, err := common.MsgMarsh(s.GetUInt32(common.MessageDeal), input)
 	if err != nil {
 		return err
 	}
@@ -215,7 +215,7 @@ func (s *ServerSession) PushTo(sid uint64, route string, input interface{}) erro
 		Sid:     sid,
 		Mid:     0,
 		MsgType: common.MsgTypePush,
-		Deal:    common.GetConfig().Base.TcpDeal,
+		Deal:    s.GetUInt32(common.MessageDeal),
 		Version: common.GetConfig().Base.Version,
 		Data:    inputBys,
 	}
@@ -251,6 +251,7 @@ func (s *ServerSession) HandleRoute(r *router.Router, m *deal.Msg) error {
 		return err
 	}
 	common.PrintMsg(m, input)
+	s.Set(common.MessageDeal, m.Deal)
 
 	// 调用函数
 	arg := []reflect.Value{reflect.ValueOf(s), reflect.ValueOf(input)}

@@ -14,7 +14,8 @@ type TcpInitFunc func(h *TcpHandle)
 type TcpCloseFunc func(h *TcpHandle)
 
 type TcpHandle struct {
-	value map[string]interface{}
+	//value map[string]interface{}
+	*common.Cache
 
 	// tcp状态
 	sync.RWMutex
@@ -31,7 +32,7 @@ type TcpHandle struct {
 
 func NewTcpHandle(conn net.Conn) *TcpHandle {
 	return &TcpHandle{
-		value:    make(map[string]interface{}),
+		Cache:    common.NewCache(),
 		status:   true,
 		conn:     conn,
 		sendChan: make(chan *common.Packet, 100),
@@ -81,27 +82,6 @@ func (h *TcpHandle) Send(msg *deal.Msg) {
 		Data:   msgBys,
 	}
 	h.sendChan <- packet
-}
-
-// 设置值
-func (h *TcpHandle) Set(k string, v interface{}) {
-	h.Lock()
-	defer h.Unlock()
-	h.value[k] = v
-}
-
-// 获取值
-func (h *TcpHandle) Get(k string) interface{} {
-	h.RLock()
-	defer h.RUnlock()
-	return h.value[k]
-}
-
-// 删除值
-func (h *TcpHandle) Del(k string) {
-	h.Lock()
-	defer h.Unlock()
-	delete(h.value, k)
 }
 
 // 获取地址

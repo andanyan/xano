@@ -29,11 +29,7 @@ func (b *BaseSession) SetSid(sid uint64) {
 }
 
 func (b *BaseSession) GetSid() uint64 {
-	v := b.Get(common.SessionIDKey)
-	if v == nil {
-		return 0
-	}
-	return v.(uint64)
+	return b.GetUInt64(common.SessionIDKey)
 }
 
 func (b *BaseSession) Rpc(route string, input, output interface{}) error {
@@ -41,7 +37,7 @@ func (b *BaseSession) Rpc(route string, input, output interface{}) error {
 }
 
 func (b *BaseSession) Notice(route string, input interface{}) error {
-	inputBys, err := common.MsgMarsh(common.GetConfig().Base.TcpDeal, input)
+	inputBys, err := common.MsgMarsh(b.GetUInt32(common.MessageDeal), input)
 	if err != nil {
 		return err
 	}
@@ -50,7 +46,7 @@ func (b *BaseSession) Notice(route string, input interface{}) error {
 		Route:   route,
 		Mid:     b.GetMid(),
 		MsgType: common.MsgTypeNotice,
-		Deal:    common.GetConfig().Base.TcpDeal,
+		Deal:    b.GetUInt32(common.MessageDeal),
 		Data:    inputBys,
 		Version: common.GetConfig().Base.Version,
 	}
@@ -60,7 +56,7 @@ func (b *BaseSession) Notice(route string, input interface{}) error {
 }
 
 func (b *BaseSession) Response(route string, input interface{}) error {
-	inputBys, err := common.MsgMarsh(common.GetConfig().Base.TcpDeal, input)
+	inputBys, err := common.MsgMarsh(b.GetUInt32(common.MessageDeal), input)
 	if err != nil {
 		return err
 	}
@@ -69,7 +65,7 @@ func (b *BaseSession) Response(route string, input interface{}) error {
 		Route:   route,
 		Mid:     b.GetMid(),
 		MsgType: common.MsgTypeResponse,
-		Deal:    common.GetConfig().Base.TcpDeal,
+		Deal:    b.GetUInt32(common.MessageDeal),
 		Data:    inputBys,
 		Version: common.GetConfig().Base.Version,
 	}
@@ -83,7 +79,7 @@ func (b *BaseSession) RpcResponse(route string, input interface{}) error {
 }
 
 func (b *BaseSession) Push(route string, input interface{}) error {
-	inputBys, err := common.MsgMarsh(common.GetConfig().Base.TcpDeal, input)
+	inputBys, err := common.MsgMarsh(b.GetUInt32(common.MessageDeal), input)
 	if err != nil {
 		return err
 	}
@@ -92,7 +88,7 @@ func (b *BaseSession) Push(route string, input interface{}) error {
 		Route:   route,
 		Mid:     b.GetMid(),
 		MsgType: common.MsgTypePush,
-		Deal:    common.GetConfig().Base.TcpDeal,
+		Deal:    b.GetUInt32(common.MessageDeal),
 		Data:    inputBys,
 		Version: common.GetConfig().Base.Version,
 	}
@@ -102,7 +98,7 @@ func (b *BaseSession) Push(route string, input interface{}) error {
 }
 
 func (b *BaseSession) PushTo(sid uint64, route string, input interface{}) error {
-	return fmt.Errorf("Not Support PushTo")
+	return fmt.Errorf("Not support push to")
 }
 
 func (b *BaseSession) SendTo(addr string, msg *deal.Msg) error {
@@ -133,6 +129,9 @@ func (b *BaseSession) HandleRoute(r *router.Router, m *deal.Msg) error {
 		logger.Error(err)
 		return err
 	}
+
+	// 缓存最后一次协议类型
+	b.Set(common.MessageDeal, m.Deal)
 
 	common.PrintMsg(m, input)
 

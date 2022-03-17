@@ -16,6 +16,17 @@ func GetMasterRouter() *Router {
 	return masterRouter
 }
 
+// http路由
+var masterHttpRouter *Router
+
+func GetMasterHttpRouter() *Router {
+	if masterHttpRouter == nil {
+		masterHttpRouter = NewRouter()
+		masterHttpRouter.Name = "MasterHttp"
+	}
+	return masterHttpRouter
+}
+
 // 全节点路由信息记录
 type MasterNode struct {
 	sync.RWMutex

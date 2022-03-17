@@ -11,7 +11,7 @@ type MasterHttpServer struct{}
 // 获取所有的node
 func (s *MasterHttpServer) ServerNode(ss session.Session, input *deal.ServerNodeRequest) error {
 	serverNodes := router.GetMasterNode().AllServerNode()
-	return ss.Response("ServerNodes", &deal.ServerNodeResponse{
+	return ss.Response("ServerNode", &deal.ServerNodeResponse{
 		Node: serverNodes,
 	})
 }
@@ -19,7 +19,7 @@ func (s *MasterHttpServer) ServerNode(ss session.Session, input *deal.ServerNode
 // 获取所有的node
 func (s *MasterHttpServer) MemberNode(ss session.Session, input *deal.MemberNodeRequest) error {
 	memberNodes := router.GetMasterNode().AllMemberNode()
-	return ss.Response("ServerNodes", &deal.MemberNodeResponse{
+	return ss.Response("MemberNode", &deal.MemberNodeResponse{
 		Node: memberNodes,
 	})
 }
