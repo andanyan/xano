@@ -106,6 +106,7 @@ func (s *MemberSession) HandleRoute(r *router.Router, m *deal.Msg) error {
 		logger.Error(err)
 		return err
 	}
+	common.PrintMsg(m, input)
 
 	// 调用函数
 	arg := []reflect.Value{reflect.ValueOf(s), reflect.ValueOf(input)}
@@ -136,7 +137,6 @@ func (s *MemberSession) RpcRequest(ss *BaseSession, msg *deal.Msg) error {
 
 	c := make(chan struct{})
 	cli.Client.SetHandleFunc(func(h *core.TcpHandle, m *deal.Msg) {
-		logger.Warnf("%+v", m)
 		if m.MsgType == common.MsgTypeResponse {
 			m.Mid = ss.GetMid()
 			ss.Send(m)
@@ -155,5 +155,35 @@ func (s *MemberSession) RpcRequest(ss *BaseSession, msg *deal.Msg) error {
 	case <-t.C:
 		return fmt.Errorf("Rpc Request Timeout")
 	}
+	return nil
+}
+
+// notice 请求
+func (s *MemberSession) Notice(route string, input interface{}) error {
+	tcpAddr := router.GetMemberServerNode().GetNodeRand(route)
+	if tcpAddr == "" {
+		logger.Warnf("not found server: %s", route)
+		return nil
+	}
+	inputBys, err := common.MsgMarsh(common.GetConfig().Base.TcpDeal, input)
+	if err != nil {
+		return err
+	}
+	inputMsg := &deal.Msg{
+		Sid:     s.GetSid(),
+		Route:   route,
+		Mid:     0,
+		MsgType: common.MsgTypePush,
+		Deal:    common.GetConfig().Base.TcpDeal,
+		Data:    inputBys,
+		Version: common.GetConfig().Base.Version,
+	}
+
+	err = s.SendTo(tcpAddr, inputMsg)
+	if err != nil {
+		return err
+	}
+	common.PrintMsg(inputMsg, input)
+
 	return nil
 }

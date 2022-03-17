@@ -54,6 +54,7 @@ func (b *BaseSession) Notice(route string, input interface{}) error {
 		Data:    inputBys,
 		Version: common.GetConfig().Base.Version,
 	}
+	common.PrintMsg(inputMsg, input)
 	b.Send(inputMsg)
 	return nil
 }
@@ -72,6 +73,7 @@ func (b *BaseSession) Response(route string, input interface{}) error {
 		Data:    inputBys,
 		Version: common.GetConfig().Base.Version,
 	}
+	common.PrintMsg(inputMsg, input)
 	b.Send(inputMsg)
 	return nil
 }
@@ -95,7 +97,12 @@ func (b *BaseSession) Push(route string, input interface{}) error {
 		Version: common.GetConfig().Base.Version,
 	}
 	b.Send(inputMsg)
+	common.PrintMsg(inputMsg, input)
 	return nil
+}
+
+func (b *BaseSession) PushTo(sid uint64, route string, input interface{}) error {
+	return fmt.Errorf("Not Support PushTo")
 }
 
 func (b *BaseSession) SendTo(addr string, msg *deal.Msg) error {
@@ -126,6 +133,9 @@ func (b *BaseSession) HandleRoute(r *router.Router, m *deal.Msg) error {
 		logger.Error(err)
 		return err
 	}
+
+	common.PrintMsg(m, input)
+
 	// 调用函数
 	arg := []reflect.Value{reflect.ValueOf(b), reflect.ValueOf(input)}
 	res := route.Method.Call(arg)

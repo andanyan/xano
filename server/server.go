@@ -47,8 +47,6 @@ func (s *Server) runTcp() {
 }
 
 func (s *Server) tcpHandle(h *core.TcpHandle, msg *deal.Msg) {
-	logger.Infof("%+v", msg)
-
 	// 解析packet
 	var err error
 

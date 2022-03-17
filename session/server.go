@@ -72,6 +72,8 @@ func (s *ServerSession) Rpc(route string, input, output interface{}) error {
 	msg.Mid = cli.Client.GetMid()
 	cli.Client.Send(msg)
 
+	common.PrintMsg(msg, input)
+
 	t := time.NewTimer(common.TcpDeadDuration)
 
 	select {
@@ -107,7 +109,13 @@ func (s *ServerSession) Notice(route string, input interface{}) error {
 	}
 	tcpAddr := rpcNode.InnerAddr
 
-	return s.SendTo(tcpAddr, msg)
+	err = s.SendTo(tcpAddr, msg)
+	if err != nil {
+		return nil
+	}
+	common.PrintMsg(msg, input)
+
+	return err
 }
 
 func (s *ServerSession) Response(route string, input interface{}) error {
@@ -133,7 +141,13 @@ func (s *ServerSession) Response(route string, input interface{}) error {
 	}
 	tcpAddr := rpcNode.InnerAddr
 
-	return s.SendTo(tcpAddr, msg)
+	err = s.SendTo(tcpAddr, msg)
+	if err != nil {
+		return nil
+	}
+	common.PrintMsg(msg, input)
+
+	return err
 }
 
 func (s *ServerSession) RpcResponse(route string, input interface{}) error {
@@ -154,6 +168,7 @@ func (s *ServerSession) RpcResponse(route string, input interface{}) error {
 
 	// 向网关主节点发送Rpc请求
 	s.Send(msg)
+	common.PrintMsg(msg, input)
 	return nil
 }
 
@@ -180,7 +195,45 @@ func (s *ServerSession) Push(route string, input interface{}) error {
 	}
 	tcpAddr := rpcNode.InnerAddr
 
-	return s.SendTo(tcpAddr, msg)
+	err = s.SendTo(tcpAddr, msg)
+	if err != nil {
+		return nil
+	}
+	common.PrintMsg(msg, input)
+
+	return err
+}
+
+func (s *ServerSession) PushTo(sid uint64, route string, input interface{}) error {
+	// 组装消息
+	inputBys, err := common.MsgMarsh(common.GetConfig().Base.TcpDeal, input)
+	if err != nil {
+		return err
+	}
+	msg := &deal.Msg{
+		Route:   route,
+		Sid:     sid,
+		Mid:     0,
+		MsgType: common.MsgTypePush,
+		Deal:    common.GetConfig().Base.TcpDeal,
+		Version: common.GetConfig().Base.Version,
+		Data:    inputBys,
+	}
+
+	// 向网关主节点发送Rpc请求
+	rpcNode, err := router.GetLocalMemberNode().GetNodeBySid(sid)
+	if err != nil {
+		return fmt.Errorf("has no member node valid")
+	}
+	tcpAddr := rpcNode.InnerAddr
+
+	err = s.SendTo(tcpAddr, msg)
+	if err != nil {
+		return nil
+	}
+	common.PrintMsg(msg, input)
+
+	return err
 }
 
 func (s *ServerSession) HandleRoute(r *router.Router, m *deal.Msg) error {
@@ -197,6 +250,7 @@ func (s *ServerSession) HandleRoute(r *router.Router, m *deal.Msg) error {
 		logger.Error(err)
 		return err
 	}
+	common.PrintMsg(m, input)
 
 	// 调用函数
 	arg := []reflect.Value{reflect.ValueOf(s), reflect.ValueOf(input)}

@@ -1,12 +1,2 @@
-问题
-1、系统无法给用户推送消息
-sid, route, input
-
-方案
-1、member改造成根据sid，进行寻址和回包，不再卡进程等回包
-2、rpc请求必须同步处理, response回包做特殊处理即可
-
-
 计划
-1、rpc有问题
-2、member支持http服务
+1、member支持http服务

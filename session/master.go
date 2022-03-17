@@ -35,6 +35,8 @@ func (s *MasterSession) HandleRoute(r *router.Router, m *deal.Msg) error {
 		return err
 	}
 
+	common.PrintMsg(m, input)
+
 	// 调用函数
 	arg := []reflect.Value{reflect.ValueOf(s), reflect.ValueOf(input)}
 	res := route.Method.Call(arg)

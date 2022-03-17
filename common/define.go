@@ -21,9 +21,9 @@ const (
 	// 服务注册时差
 	TcpHeartDuration time.Duration = time.Duration(60) * time.Second
 	// TCP请求超时市场
-	TcpDeadDuration time.Duration = time.Duration(60) * time.Second
+	TcpDeadDuration time.Duration = time.Duration(10) * time.Second
 	// HTTP请求超时时间
-	HttpDeadDuration time.Duration = time.Duration(60) * time.Second
+	HttpDeadDuration time.Duration = time.Duration(30) * time.Second
 	// 连接池
 	TcpPoolIdMin int = 0
 	TcpPoolIdMax int = 10

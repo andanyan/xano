@@ -138,7 +138,9 @@ message Psutil {
     string HostPlatform = 12;
 }
 
-message SessionInitRequest {}
-message SessionInitResponse {
+message SessionInitNotice {
+    uint64 Sid = 1;
+}
+message SessionCloseNotice {
     uint64 Sid = 1;
 }

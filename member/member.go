@@ -55,7 +55,7 @@ func (m *Member) runTcp() {
 
 // 转发逻辑
 func (m *Member) tcpHandle(h *core.TcpHandle, msg *deal.Msg) {
-	logger.Infof("%+v", msg)
+	common.PrintMsg(msg)
 	switch msg.MsgType {
 	case common.MsgTypeRequest, common.MsgTypeNotice:
 		ss := session.GetMemberSession(h)
@@ -80,6 +80,9 @@ func (m *Member) tcpInit(h *core.TcpHandle) {
 		return
 	}
 	GetMemberMaster().memberInfo()
+	ss.Notice("SessionInit", &deal.SessionInitNotice{
+		Sid: ss.GetSid(),
+	})
 	logger.Debug("tcp session init: ", ss.GetSid())
 }
 
@@ -88,6 +91,9 @@ func (m *Member) tcpClose(h *core.TcpHandle) {
 	ss := session.GetMemberSession(h)
 	session.GetMember().SessionClose(ss)
 	GetMemberMaster().memberInfo()
+	ss.Notice("SessionClose", &deal.SessionCloseNotice{
+		Sid: ss.GetSid(),
+	})
 	logger.Debug("tcp session close: ", ss.GetSid())
 }
 
@@ -108,7 +114,6 @@ func (m *Member) innerTcp() {
 
 // 转发逻辑
 func (m *Member) innerHandle(h *core.TcpHandle, msg *deal.Msg) {
-	logger.Debugf("Inner %+v", msg)
 	sid := msg.Sid
 	if sid <= 0 {
 		logger.Warnf("No Session Msg: %+v", msg)

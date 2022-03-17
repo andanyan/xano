@@ -3,6 +3,8 @@ package common
 import (
 	"encoding/json"
 	"fmt"
+	"xano/deal"
+	"xano/logger"
 
 	"google.golang.org/protobuf/proto"
 )
@@ -42,4 +44,18 @@ func MsgUnMarsh(deal uint32, msg []byte, output interface{}) error {
 		return json.Unmarshal(msg, output)
 	}
 	return fmt.Errorf("unsupported protocols")
+}
+
+// 打印消息
+var msgTypeDesc = []string{"request", "response", "notice", "push"}
+var dealDesc = []string{"protobuf", "json"}
+
+func PrintMsg(msg *deal.Msg, data ...interface{}) {
+	if len(data) == 0 {
+		logger.Printf("sid: %d, route: %s, mid: %d, msgType: %s, deal: %s, version: %s, dataLen: %d",
+			msg.Sid, msg.Route, msg.Mid, msgTypeDesc[msg.MsgType-1], dealDesc[msg.Deal-1], msg.Version, len(msg.Data))
+		return
+	}
+	logger.Printf("sid: %d, route: %s, mid: %d, msgType: %s, deal: %s, version: %s, dataLen: %d, data: %+v",
+		msg.Sid, msg.Route, msg.Mid, msgTypeDesc[msg.MsgType-1], dealDesc[msg.Deal-1], msg.Version, len(msg.Data), data)
 }

@@ -26,6 +26,7 @@ type Session interface {
 	Response(route string, input interface{}) error
 	RpcResponse(route string, input interface{}) error
 	Push(route string, input interface{}) error
+	PushTo(sid uint64, route string, input interface{}) error
 	SendTo(addr string, msg *deal.Msg) error
 	HandleRoute(r *router.Router, m *deal.Msg) error
 }

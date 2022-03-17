@@ -1152,14 +1152,16 @@ func (x *Psutil) GetHostPlatform() string {
 	return ""
 }
 
-type SessionInitRequest struct {
+type SessionInitNotice struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
+
+	Sid uint64 `protobuf:"varint,1,opt,name=Sid,proto3" json:"Sid,omitempty"`
 }
 
-func (x *SessionInitRequest) Reset() {
-	*x = SessionInitRequest{}
+func (x *SessionInitNotice) Reset() {
+	*x = SessionInitNotice{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_msg_proto_msgTypes[19]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1167,13 +1169,13 @@ func (x *SessionInitRequest) Reset() {
 	}
 }
 
-func (x *SessionInitRequest) String() string {
+func (x *SessionInitNotice) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*SessionInitRequest) ProtoMessage() {}
+func (*SessionInitNotice) ProtoMessage() {}
 
-func (x *SessionInitRequest) ProtoReflect() protoreflect.Message {
+func (x *SessionInitNotice) ProtoReflect() protoreflect.Message {
 	mi := &file_msg_proto_msgTypes[19]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1185,12 +1187,19 @@ func (x *SessionInitRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SessionInitRequest.ProtoReflect.Descriptor instead.
-func (*SessionInitRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use SessionInitNotice.ProtoReflect.Descriptor instead.
+func (*SessionInitNotice) Descriptor() ([]byte, []int) {
 	return file_msg_proto_rawDescGZIP(), []int{19}
 }
 
-type SessionInitResponse struct {
+func (x *SessionInitNotice) GetSid() uint64 {
+	if x != nil {
+		return x.Sid
+	}
+	return 0
+}
+
+type SessionCloseNotice struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -1198,8 +1207,8 @@ type SessionInitResponse struct {
 	Sid uint64 `protobuf:"varint,1,opt,name=Sid,proto3" json:"Sid,omitempty"`
 }
 
-func (x *SessionInitResponse) Reset() {
-	*x = SessionInitResponse{}
+func (x *SessionCloseNotice) Reset() {
+	*x = SessionCloseNotice{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_msg_proto_msgTypes[20]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1207,13 +1216,13 @@ func (x *SessionInitResponse) Reset() {
 	}
 }
 
-func (x *SessionInitResponse) String() string {
+func (x *SessionCloseNotice) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*SessionInitResponse) ProtoMessage() {}
+func (*SessionCloseNotice) ProtoMessage() {}
 
-func (x *SessionInitResponse) ProtoReflect() protoreflect.Message {
+func (x *SessionCloseNotice) ProtoReflect() protoreflect.Message {
 	mi := &file_msg_proto_msgTypes[20]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1225,12 +1234,12 @@ func (x *SessionInitResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SessionInitResponse.ProtoReflect.Descriptor instead.
-func (*SessionInitResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use SessionCloseNotice.ProtoReflect.Descriptor instead.
+func (*SessionCloseNotice) Descriptor() ([]byte, []int) {
 	return file_msg_proto_rawDescGZIP(), []int{20}
 }
 
-func (x *SessionInitResponse) GetSid() uint64 {
+func (x *SessionCloseNotice) GetSid() uint64 {
 	if x != nil {
 		return x.Sid
 	}
@@ -1344,10 +1353,11 @@ var file_msg_proto_rawDesc = []byte{
 	0x16, 0x0a, 0x06, 0x48, 0x6f, 0x73, 0x74, 0x4f, 0x73, 0x18, 0x0b, 0x20, 0x01, 0x28, 0x09, 0x52,
 	0x06, 0x48, 0x6f, 0x73, 0x74, 0x4f, 0x73, 0x12, 0x22, 0x0a, 0x0c, 0x48, 0x6f, 0x73, 0x74, 0x50,
 	0x6c, 0x61, 0x74, 0x66, 0x6f, 0x72, 0x6d, 0x18, 0x0c, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0c, 0x48,
-	0x6f, 0x73, 0x74, 0x50, 0x6c, 0x61, 0x74, 0x66, 0x6f, 0x72, 0x6d, 0x22, 0x14, 0x0a, 0x12, 0x53,
-	0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x49, 0x6e, 0x69, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
-	0x74, 0x22, 0x27, 0x0a, 0x13, 0x53, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x49, 0x6e, 0x69, 0x74,
-	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x10, 0x0a, 0x03, 0x53, 0x69, 0x64, 0x18,
+	0x6f, 0x73, 0x74, 0x50, 0x6c, 0x61, 0x74, 0x66, 0x6f, 0x72, 0x6d, 0x22, 0x25, 0x0a, 0x11, 0x53,
+	0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x49, 0x6e, 0x69, 0x74, 0x4e, 0x6f, 0x74, 0x69, 0x63, 0x65,
+	0x12, 0x10, 0x0a, 0x03, 0x53, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x03, 0x53,
+	0x69, 0x64, 0x22, 0x26, 0x0a, 0x12, 0x53, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x43, 0x6c, 0x6f,
+	0x73, 0x65, 0x4e, 0x6f, 0x74, 0x69, 0x63, 0x65, 0x12, 0x10, 0x0a, 0x03, 0x53, 0x69, 0x64, 0x18,
 	0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x03, 0x53, 0x69, 0x64, 0x42, 0x09, 0x5a, 0x07, 0x2e, 0x2e,
 	0x2f, 0x64, 0x65, 0x61, 0x6c, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
@@ -1385,8 +1395,8 @@ var file_msg_proto_goTypes = []interface{}{
 	(*MemberNodePush)(nil),      // 16: deal.MemberNodePush
 	(*MemberInfoNotice)(nil),    // 17: deal.MemberInfoNotice
 	(*Psutil)(nil),              // 18: deal.Psutil
-	(*SessionInitRequest)(nil),  // 19: deal.SessionInitRequest
-	(*SessionInitResponse)(nil), // 20: deal.SessionInitResponse
+	(*SessionInitNotice)(nil),   // 19: deal.SessionInitNotice
+	(*SessionCloseNotice)(nil),  // 20: deal.SessionCloseNotice
 }
 var file_msg_proto_depIdxs = []int32{
 	18, // 0: deal.Ping.Psutil:type_name -> deal.Psutil
@@ -1639,7 +1649,7 @@ func file_msg_proto_init() {
 			}
 		}
 		file_msg_proto_msgTypes[19].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*SessionInitRequest); i {
+			switch v := v.(*SessionInitNotice); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1651,7 +1661,7 @@ func file_msg_proto_init() {
 			}
 		}
 		file_msg_proto_msgTypes[20].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*SessionInitResponse); i {
+			switch v := v.(*SessionCloseNotice); i {
 			case 0:
 				return &v.state
 			case 1:
